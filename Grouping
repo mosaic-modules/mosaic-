@@ -157,14 +157,14 @@
   
   <div id="app-wrapper">
     <!-- The key change is here: data-activity-type tells the JS which mode to use. -->
-    <div id="activity-container" 
-         data-activity-type="single-image" 
-         data-query-theme="books library abstract">
+    <div id="activity-container"
+         data-activity-type="single-image"
+         data-query-theme="Palestinian culture">
       
       <div id="activity-header">
         <div id="activity-titles">
-          <h1>Discourse Markers</h1>
-          <h2 class="rubric">Categorise these linking words by their function.</h2>
+          <h1>Palestinian Culture</h1>
+          <h2 class="rubric">Drag each item to its correct category.</h2>
         </div>
         <div id="decorative-image-container">
           <div class="placeholder-loader"></div>
@@ -174,22 +174,22 @@
       <div class="dnd-main-container">
         <!-- Pool of items to drag -->
         <div id="items-pool-container">
-          <h3>Linking Words</h3>
+          <h3>Word Bank</h3>
           <div id="items-pool" class="dnd-list">
-            <div class="dnd-item" data-correct-category="contrast" data-explanation="'However' is used to introduce a statement that contrasts with or seems to contradict something that has been said previously.">However</div>
-            <div class="dnd-item" data-correct-category="addition" data-explanation="'Furthermore' adds another piece of information to the point you are making.">Furthermore</div>
-            <div class="dnd-item" data-correct-category="consequence" data-explanation="'Therefore' indicates that a statement is the logical consequence of the one that came before it.">Therefore</div>
-            <div class="dnd-item" data-correct-category="contrast" data-explanation="'On the other hand' is used to present a contrasting point of view.">On the other hand</div>
-            <div class="dnd-item" data-correct-category="consequence" data-explanation="'As a result' shows that the second statement is a result of the first.">As a result</div>
-            <div class="dnd-item" data-correct-category="addition" data-explanation="'Moreover' is used to introduce a piece of information that adds to or supports the previous one.">Moreover</div>
+            <div class="dnd-item" data-correct-category="addition" data-explanation="Nablus is a northern West Bank city famous for its bustling markets and sweets like kanafeh.">Nablus</div>
+            <div class="dnd-item" data-correct-category="addition" data-explanation="Hebron is known for its old city and traditional glass blowing workshops.">Hebron</div>
+            <div class="dnd-item" data-correct-category="contrast" data-explanation="The Dome of the Rock is an iconic golden shrine in Jerusalem." >Dome of the Rock</div>
+            <div class="dnd-item" data-correct-category="contrast" data-explanation="The Church of the Nativity in Bethlehem marks the traditional birthplace of Jesus." >Church of the Nativity</div>
+            <div class="dnd-item" data-correct-category="consequence" data-explanation="Kanafeh is a sweet cheese pastry soaked in syrup, enjoyed across Palestine." >Kanafeh</div>
+            <div class="dnd-item" data-correct-category="consequence" data-explanation="Maqluba is a layered rice dish with meat and vegetables flipped onto a serving tray." >Maqluba</div>
           </div>
         </div>
         
         <!-- Category Drop Zones -->
         <div id="category-zones">
-          <div id="addition" class="dnd-category-zone"><h3>Addition</h3><div class="dnd-list"></div></div>
-          <div id="contrast" class="dnd-category-zone"><h3>Contrast</h3><div class="dnd-list"></div></div>
-          <div id="consequence" class="dnd-category-zone"><h3>Consequence</h3><div class="dnd-list"></div></div>
+          <div id="addition" class="dnd-category-zone"><h3>Cities</h3><div class="dnd-list"></div></div>
+          <div id="contrast" class="dnd-category-zone"><h3>Landmarks</h3><div class="dnd-list"></div></div>
+          <div id="consequence" class="dnd-category-zone"><h3>Foods</h3><div class="dnd-list"></div></div>
         </div>
       </div>
       
