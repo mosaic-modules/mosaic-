@@ -291,49 +291,49 @@
   
   <div id="app-wrapper">
     <div id="activity-container">
-      <h1>Mediterranean Flora</h1>
-      <h2 class="rubric">Drag the labels from the word bank to the correct plant images.</h2>
+      <h1>Scenes from Palestine</h1>
+      <h2 class="rubric">Drag the labels from the word bank to match each image.</h2>
       
       <div class="image-labelling-grid">
         <div class="image-labelling-card">
-          <img data-query="olive tree branch fruit" alt="A photo of an olive branch." src="">
-          <div class="image-labelling-dropzone" data-match="Olive"></div>
-          <div class="explanation" style="display: none;">The olive is a cornerstone of Mediterranean agriculture, prized for its fruit and the oil extracted from it. It thrives in hot, dry climates.</div>
+          <img data-query="jerusalem old city street" alt="A street scene in Jerusalem's Old City." src="">
+          <div class="image-labelling-dropzone" data-match="Jerusalem"></div>
+          <div class="explanation" style="display: none;">Jerusalem's Old City is known for its markets and historic architecture.</div>
         </div>
         <div class="image-labelling-card">
-          <img data-query="prickly pear cactus flower fruit" alt="A photo of a prickly pear cactus." src="">
-          <div class="image-labelling-dropzone" data-match="Prickly pear cactus"></div>
-          <div class="explanation" style="display: none;">Also known as Opuntia, this cactus is recognized by its flat, fleshy pads. It produces colorful flowers and edible, spiny fruits.</div>
+          <img data-query="ramallah city center" alt="A view of Ramallah city centre." src="">
+          <div class="image-labelling-dropzone" data-match="Ramallah"></div>
+          <div class="explanation" style="display: none;">Ramallah is a vibrant administrative and cultural centre in the West Bank.</div>
         </div>
         <div class="image-labelling-card">
-          <img data-query="red poppy flower field" alt="A photo of red poppies." src="">
-          <div class="image-labelling-dropzone" data-match="Poppies"></div>
-          <div class="explanation" style="display: none;">These vibrant red flowers are a common sight in Mediterranean fields and meadows, symbolizing remembrance and peace.</div>
+          <img data-query="gaza beach" alt="People relaxing on a beach in Gaza." src="">
+          <div class="image-labelling-dropzone" data-match="Gaza"></div>
+          <div class="explanation" style="display: none;">Gaza's Mediterranean coastline is central to daily life for many residents.</div>
         </div>
         <div class="image-labelling-card">
-          <img data-query="orange fruit tree branch" alt="A photo of oranges on a tree." src="">
-          <div class="image-labelling-dropzone" data-match="Oranges"></div>
-          <div class="explanation" style="display: none;">Citrus trees, especially oranges, are widely cultivated in the Mediterranean. Their sweet, juicy fruits are a major export.</div>
+          <img data-query="hebron old city" alt="A market scene in Hebron." src="">
+          <div class="image-labelling-dropzone" data-match="Hebron"></div>
+          <div class="explanation" style="display: none;">Hebron's markets are famous for their local produce and crafts.</div>
         </div>
         <div class="image-labelling-card">
-          <img data-query="italian cypress tree landscape" alt="A photo of cypress trees." src="">
-          <div class="image-labelling-dropzone" data-match="Cypress"></div>
-          <div class="explanation" style="display: none;">The tall, slender, and dark green Italian Cypress is a classic feature of the Tuscan and broader Mediterranean landscape.</div>
+          <img data-query="dead sea shoreline" alt="A photo of the Dead Sea." src="">
+          <div class="image-labelling-dropzone" data-match="Dead Sea"></div>
+          <div class="explanation" style="display: none;">The Dead Sea, the lowest point on Earth, is a unique tourist attraction.</div>
         </div>
         <div class="image-labelling-card">
-          <img data-query="thyme herb plant garden" alt="A photo of a thyme plant." src="">
-          <div class="image-labelling-dropzone" data-match="Thyme"></div>
-          <div class="explanation" style="display: none;">This aromatic herb is native to the Mediterranean region and is a fundamental ingredient in its cuisine, known for its earthy flavor.</div>
+          <img data-query="olive harvest palestine" alt="Farmers harvesting olives." src="">
+          <div class="image-labelling-dropzone" data-match="Olive harvest"></div>
+          <div class="explanation" style="display: none;">The annual olive harvest is an important tradition across Palestine.</div>
         </div>
       </div>
 
       <div class="image-labelling-label-bank">
-        <div class="draggable-label" draggable="true">Cypress</div>
-        <div class="draggable-label" draggable="true">Poppies</div>
-        <div class="draggable-label" draggable="true">Thyme</div>
-        <div class="draggable-label" draggable="true">Olive</div>
-        <div class="draggable-label" draggable="true">Oranges</div>
-        <div class="draggable-label" draggable="true">Prickly pear cactus</div>
+        <div class="draggable-label" draggable="true">Jerusalem</div>
+        <div class="draggable-label" draggable="true">Ramallah</div>
+        <div class="draggable-label" draggable="true">Gaza</div>
+        <div class="draggable-label" draggable="true">Hebron</div>
+        <div class="draggable-label" draggable="true">Dead Sea</div>
+        <div class="draggable-label" draggable="true">Olive harvest</div>
       </div>
 
       <div class="student-controls">
