@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Standalone Activity: Image Labelling (Detailed Feedback)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Questrial&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-sage: #7A8471;
+      --secondary-sage: #9CAF88;
+      --tertiary-sage: #B8C5A6;
+      --warm-cream: #F8F6F0;
+      --soft-white: #FEFCF7;
+      --clay-brown: #A0826D;
+      --muted-coral: #D4A574;
+      --forest-shadow: #5A6B52;
+      --border-sage: rgba(122, 132, 113, 0.2);
+      --hover-sage: rgba(156, 175, 136, 0.15);
+      --font-display: 'Questrial', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+      --feedback-width-desktop: 380px;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: var(--font-body); 
+      background: linear-gradient(135deg, #F8F6F0 0%, #F5F3ED 100%);
+      overflow-x: hidden;
+    }
+
+    body.feedback-open {
+        overflow: hidden;
+    }
+
+    #app-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 2rem;
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    #activity-container {
+      width: 100%;
+      max-width: 900px;
+      background: var(--soft-white);
+      padding: 48px;
+      border-radius: 20px;
+      border: 1px solid rgba(122, 132, 113, 0.12);
+      box-shadow: 0 8px 32px rgba(122, 132, 113, 0.08);
+      box-sizing: border-box;
+      transition: margin-right 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @media (min-width: 1024px) {
+      #app-wrapper.feedback-visible #activity-container {
+          margin-right: var(--feedback-width-desktop);
+      }
+    }
+    
+    h1 {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--forest-shadow);
+      margin: 0 0 8px 0;
+    }
+
+    h2.rubric {
+        font-family: var(--font-body);
+        font-size: 1.1rem;
+        color: var(--secondary-sage);
+        margin: 0 0 24px 0;
+        border-left: 3px solid var(--tertiary-sage);
+        padding-left: 12px;
+    }
+
+    .activity-btn {
+        padding: 12px 24px;
+        border-radius: 12px;
+        border: 1px solid var(--primary-sage);
+        background-color: var(--primary-sage);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .activity-btn:hover { background-color: var(--forest-shadow); transform: translateY(-1px); }
+    .activity-btn.secondary {
+        background-color: transparent;
+        color: var(--primary-sage);
+        border-color: var(--tertiary-sage);
+    }
+    .activity-btn.secondary:hover { background-color: var(--hover-sage); }
+    
+    /* --- Image Labelling Styles --- */
+    .image-labelling-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 24px;
+        margin: 20px 0;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .image-labelling-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .image-labelling-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--border-sage);
+        background-color: var(--hover-sage);
+        display: block;
+        transition: border-color 0.3s;
+    }
+    .image-labelling-dropzone {
+        min-height: 60px;
+        border: 2px dashed var(--tertiary-sage);
+        border-radius: 12px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+    .image-labelling-dropzone.drag-over {
+        background-color: var(--hover-sage);
+        border-color: var(--secondary-sage);
+    }
+    .image-labelling-dropzone.correct-drop {
+        border-color: #2E7D32;
+        background-color: #E8F5E9;
+    }
+    .image-labelling-dropzone.incorrect-drop {
+        border-color: #C62828;
+        background-color: #FFEBEE;
+    }
+    .image-labelling-label-bank {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 25px;
+        padding: 16px;
+        background-color: var(--hover-sage);
+        border-radius: 12px;
+        justify-content: center;
+        min-height: 50px;
+    }
+    .draggable-label {
+        cursor: grab;
+        padding: 8px 16px;
+        background: var(--muted-coral);
+        color: var(--soft-white);
+        border-radius: 20px;
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 0 2px 8px rgba(90, 107, 82, 0.1);
+    }
+    .draggable-label:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(90, 107, 82, 0.15);
+    }
+    .draggable-label.dragging {
+        cursor: grabbing !important;
+        opacity: 0.5;
+        transform: scale(0.95);
+        box-shadow: none !important;
+    }
+    .student-controls { margin-top: 32px; display: flex; gap: 12px; }
+
+    /* --- Feedback Panel Styles --- */
+    #feedback-sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--warm-cream);
+        border-left: 1px solid var(--border-sage);
+        box-shadow: -8px 0 32px rgba(90, 107, 82, 0.1);
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+    
+    @media (min-width: 1024px) {
+      #feedback-sidebar {
+        width: var(--feedback-width-desktop);
+        height: 100vh;
+      }
+    }
+
+    #app-wrapper.feedback-visible #feedback-sidebar {
+        transform: translateX(0);
+    }
+    .feedback-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--border-sage);
+    }
+    .feedback-header h3 {
+        font-family: var(--font-display);
+        font-size: 1.8rem;
+        color: var(--forest-shadow);
+        margin: 0 0 8px 0;
+    }
+    #feedback-score {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-sage);
+    }
+    #feedback-details {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .feedback-item {
+        background: var(--soft-white);
+        border: 1px solid var(--border-sage);
+        border-left-width: 4px;
+        border-radius: 8px;
+        padding: 16px;
+    }
+    .feedback-item.correct { border-left-color: #2E7D32; }
+    .feedback-item.incorrect { border-left-color: #C62828; }
+    .feedback-item h4 {
+        margin: 0 0 12px 0;
+        font-size: 1.1rem;
+        color: var(--forest-shadow);
+    }
+    .feedback-item p {
+        margin: 0 0 8px 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: var(--primary-sage);
+    }
+    .feedback-item p strong { color: var(--forest-shadow); }
+    .feedback-item .explanation {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border-sage);
+    }
+    .feedback-footer {
+        padding: 24px;
+        border-top: 1px solid var(--border-sage);
+        text-align: center;
+        background: var(--warm-cream);
+    }
+    
+    @media (max-width: 767px) {
+        #app-wrapper {
+            padding: 1rem;
+        }
+        #activity-container {
+            padding: 24px;
+        }
+        h1 {
+            font-size: 2rem;
+        }
+        h2.rubric {
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        .feedback-header, #feedback-details, .feedback-footer {
+          padding: 20px;
+        }
+        .feedback-header h3 {
+          font-size: 1.6rem;
+        }
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="app-wrapper">
+    <div id="activity-container">
+      <h1>Mediterranean Flora</h1>
+      <h2 class="rubric">Drag the labels from the word bank to the correct plant images.</h2>
+      
+      <div class="image-labelling-grid">
+        <div class="image-labelling-card">
+          <img data-query="olive tree branch fruit" alt="A photo of an olive branch." src="">
+          <div class="image-labelling-dropzone" data-match="Olive"></div>
+          <div class="explanation" style="display: none;">The olive is a cornerstone of Mediterranean agriculture, prized for its fruit and the oil extracted from it. It thrives in hot, dry climates.</div>
+        </div>
+        <div class="image-labelling-card">
+          <img data-query="prickly pear cactus flower fruit" alt="A photo of a prickly pear cactus." src="">
+          <div class="image-labelling-dropzone" data-match="Prickly pear cactus"></div>
+          <div class="explanation" style="display: none;">Also known as Opuntia, this cactus is recognized by its flat, fleshy pads. It produces colorful flowers and edible, spiny fruits.</div>
+        </div>
+        <div class="image-labelling-card">
+          <img data-query="red poppy flower field" alt="A photo of red poppies." src="">
+          <div class="image-labelling-dropzone" data-match="Poppies"></div>
+          <div class="explanation" style="display: none;">These vibrant red flowers are a common sight in Mediterranean fields and meadows, symbolizing remembrance and peace.</div>
+        </div>
+        <div class="image-labelling-card">
+          <img data-query="orange fruit tree branch" alt="A photo of oranges on a tree." src="">
+          <div class="image-labelling-dropzone" data-match="Oranges"></div>
+          <div class="explanation" style="display: none;">Citrus trees, especially oranges, are widely cultivated in the Mediterranean. Their sweet, juicy fruits are a major export.</div>
+        </div>
+        <div class="image-labelling-card">
+          <img data-query="italian cypress tree landscape" alt="A photo of cypress trees." src="">
+          <div class="image-labelling-dropzone" data-match="Cypress"></div>
+          <div class="explanation" style="display: none;">The tall, slender, and dark green Italian Cypress is a classic feature of the Tuscan and broader Mediterranean landscape.</div>
+        </div>
+        <div class="image-labelling-card">
+          <img data-query="thyme herb plant garden" alt="A photo of a thyme plant." src="">
+          <div class="image-labelling-dropzone" data-match="Thyme"></div>
+          <div class="explanation" style="display: none;">This aromatic herb is native to the Mediterranean region and is a fundamental ingredient in its cuisine, known for its earthy flavor.</div>
+        </div>
+      </div>
+
+      <div class="image-labelling-label-bank">
+        <div class="draggable-label" draggable="true">Cypress</div>
+        <div class="draggable-label" draggable="true">Poppies</div>
+        <div class="draggable-label" draggable="true">Thyme</div>
+        <div class="draggable-label" draggable="true">Olive</div>
+        <div class="draggable-label" draggable="true">Oranges</div>
+        <div class="draggable-label" draggable="true">Prickly pear cactus</div>
+      </div>
+
+      <div class="student-controls">
+        <button class="activity-btn check-answers-btn">Check Answers</button>
+      </div>
+    </div>
+    
+    <div id="feedback-sidebar">
+      <div class="feedback-header">
+        <h3>Your Results</h3>
+        <p id="feedback-score"></p>
+      </div>
+      <div id="feedback-details">
+        <!-- Feedback items will be injected here -->
+      </div>
+      <div class="feedback-footer">
+        <button id="feedback-close-btn" class="activity-btn secondary">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const Activity = {
+  dom: {},
+  init() {
+    this.cacheDom();
+    ImageLabellingManager.init(this.dom.activityContainer);
+    this.bindEvents();
+    this.fetchImages();
+  },
+  cacheDom() {
+    this.dom.appWrapper = document.getElementById('app-wrapper');
+    this.dom.activityContainer = document.getElementById('activity-container');
+    this.dom.feedbackSidebar = document.getElementById('feedback-sidebar');
+    this.dom.feedbackScore = document.getElementById('feedback-score');
+    this.dom.feedbackDetails = document.getElementById('feedback-details');
+    this.dom.feedbackCloseBtn = document.getElementById('feedback-close-btn');
+  },
+  bindEvents() {
+    this.dom.feedbackCloseBtn.addEventListener('click', () => {
+        this.hideFeedback();
+        ImageLabellingManager.resetActivity();
+    });
+  },
+  clearFeedback() {
+    this.dom.feedbackDetails.innerHTML = '';
+  },
+  addFeedbackDetail(data) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = `feedback-item ${data.isCorrect ? 'correct' : 'incorrect'}`;
+    itemDiv.innerHTML = `
+        <h4>${data.questionText}</h4>
+        <p><strong>Your Answer:</strong> ${data.studentAnswer}</p>
+        ${!data.isCorrect ? `<p><strong>Correct Answer:</strong> ${data.correctAnswer}</p>` : ''}
+        <div class="explanation">
+            <p>${data.explanation}</p>
+        </div>
+    `;
+    this.dom.feedbackDetails.appendChild(itemDiv);
+  },
+  showFeedback(score, total) {
+    this.dom.feedbackScore.textContent = `You scored ${score} out of ${total}.`;
+    this.dom.appWrapper.classList.add('feedback-visible');
+    document.body.classList.add('feedback-open');
+  },
+  hideFeedback() {
+    this.dom.appWrapper.classList.remove('feedback-visible');
+    document.body.classList.remove('feedback-open');
+  },
+  async fetchImages() {
+    const apiKey = 'xgmzSrq1PBV9ELvW4mSlyq6vAf0k6qDrrMd1zIpLrIheWepQ32zN4iJk';
+    const imageElements = this.dom.activityContainer.querySelectorAll('img[data-query]');
+    
+    for (const img of imageElements) {
+        const query = img.dataset.query;
+        const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1`;
+        
+        try {
+            const response = await fetch(url, { headers: { Authorization: apiKey } });
+            if (!response.ok) throw new Error(`Pexels API error: ${response.status}`);
+            const data = await response.json();
+            if (data.photos.length > 0) {
+                img.src = data.photos[0].src.large;
+            } else {
+                img.alt = `No image found for '${query}'`;
+            }
+        } catch (error) {
+            console.error(`Failed to fetch image for "${query}":`, error);
+            img.alt = 'Image could not be loaded.';
+        }
+    }
+  }
+};
+
+const ImageLabellingManager = {
+    draggedItem: null,
+    dom: {},
+
+    init(container) {
+        this.dom.container = container;
+        this.bindEvents();
+    },
+
+    bindEvents() {
+        this.dom.container.addEventListener('dragstart', e => this.onDragStart(e));
+        this.dom.container.addEventListener('dragend', e => this.onDragEnd(e));
+        this.dom.container.addEventListener('dragover', e => this.onDragOver(e));
+        this.dom.container.addEventListener('dragleave', e => this.onDragLeave(e));
+        this.dom.container.addEventListener('drop', e => this.onDrop(e));
+        this.dom.container.addEventListener('click', e => {
+            if (e.target.matches('.check-answers-btn')) this.checkAnswers();
+        });
+    },
+
+    onDragStart(e) {
+        if (e.target.matches('.draggable-label')) {
+            this.draggedItem = e.target;
+            setTimeout(() => e.target.classList.add('dragging'), 0);
+        }
+    },
+    onDragEnd() {
+        if (this.draggedItem) {
+            this.draggedItem.classList.remove('dragging');
+            this.draggedItem = null;
+        }
+    },
+    onDragOver(e) {
+        const dropTarget = e.target.closest('.image-labelling-dropzone, .image-labelling-label-bank');
+        if (!dropTarget || !this.draggedItem) return;
+        e.preventDefault();
+        
+        if (dropTarget.matches('.image-labelling-dropzone') && dropTarget.children.length > 0 && !dropTarget.contains(this.draggedItem)) {
+            return;
+        }
+        
+        dropTarget.classList.add('drag-over');
+        const afterElement = this.getDragAfterElement(dropTarget, e.clientX);
+        dropTarget.insertBefore(this.draggedItem, afterElement);
+    },
+    onDragLeave(e) {
+        e.target.closest('.image-labelling-dropzone, .image-labelling-label-bank')?.classList.remove('drag-over');
+    },
+    onDrop(e) {
+        e.target.closest('.image-labelling-dropzone, .image-labelling-label-bank')?.classList.remove('drag-over');
+    },
+    getDragAfterElement(container, x) {
+        const draggableElements = [...container.querySelectorAll('.draggable-label:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = x - box.left - box.width / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    },
+
+    checkAnswers() {
+        const cards = this.dom.container.querySelectorAll('.image-labelling-card');
+        let totalCorrect = 0;
+        
+        Activity.clearFeedback();
+
+        cards.forEach(card => {
+            const dropzone = card.querySelector('.image-labelling-dropzone');
+            const droppedLabel = dropzone.querySelector('.draggable-label');
+            const correctAnswer = dropzone.dataset.match;
+            const studentAnswer = droppedLabel ? droppedLabel.textContent.trim() : "No answer";
+            const isCorrect = studentAnswer === correctAnswer;
+
+            if (isCorrect) totalCorrect++;
+            
+            dropzone.classList.toggle('correct-drop', isCorrect);
+            dropzone.classList.toggle('incorrect-drop', !isCorrect);
+
+            Activity.addFeedbackDetail({
+                isCorrect,
+                questionText: `The image of the ${correctAnswer}`,
+                studentAnswer: studentAnswer,
+                correctAnswer: correctAnswer,
+                explanation: card.querySelector('.explanation')?.innerHTML || 'No explanation available.'
+            });
+        });
+
+        Activity.showFeedback(totalCorrect, cards.length);
+    },
+
+    resetActivity() {
+        const bank = this.dom.container.querySelector('.image-labelling-label-bank');
+        this.dom.container.querySelectorAll('.draggable-label').forEach(label => bank.appendChild(label));
+        this.dom.container.querySelectorAll('.image-labelling-dropzone').forEach(dz => {
+            dz.classList.remove('correct-drop', 'incorrect-drop');
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => Activity.init());
+</script>
+
+</body>
+</html>

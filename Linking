@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Standalone Activity: Linking Activity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Questrial&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-sage: #7A8471;
+      --secondary-sage: #9CAF88;
+      --tertiary-sage: #B8C5A6;
+      --warm-cream: #F8F6F0;
+      --soft-white: #FEFCF7;
+      --clay-brown: #A0826D;
+      --forest-shadow: #5A6B52;
+      --border-sage: rgba(122, 132, 113, 0.2);
+      --hover-sage: rgba(156, 175, 136, 0.15);
+      --correct-bg: #E8F5E9;
+      --correct-border: #2E7D32;
+      --incorrect-bg: #FFEBEE;
+      --incorrect-border: #C62828;
+      --font-display: 'Questrial', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+      --feedback-width-desktop: 380px;
+
+      /* Colors for linking activity */
+      --student-line-color: var(--primary-sage);
+      --connector-color: #FFC107; /* Bright yellow for visibility */
+      --current-line-color: var(--secondary-sage);
+    }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%;
+      font-family: var(--font-body); 
+      background: linear-gradient(135deg, #F8F6F0 0%, #F5F3ED 100%);
+      overflow-x: hidden;
+    }
+    
+    body.feedback-open { overflow: hidden; }
+
+    #app-wrapper {
+        position: relative; display: flex; justify-content: center;
+        align-items: flex-start; padding: 2rem; box-sizing: border-box; width: 100%;
+    }
+
+    #activity-container {
+      width: 100%; max-width: 900px; background: var(--soft-white);
+      padding: 48px; border-radius: 20px;
+      border: 1px solid rgba(122, 132, 113, 0.12);
+      box-shadow: 0 8px 32px rgba(122, 132, 113, 0.08);
+      box-sizing: border-box;
+      transition: margin-right 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    @media (min-width: 1024px) {
+      #app-wrapper.feedback-visible #activity-container { margin-right: var(--feedback-width-desktop); }
+    }
+    
+    #activity-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+    #activity-titles { flex-grow: 1; }
+    h1 { font-family: var(--font-display); font-size: 2.5rem; color: var(--forest-shadow); margin: 0 0 8px 0; }
+    h2.rubric { font-family: var(--font-body); font-size: 1.1rem; color: var(--secondary-sage); margin: 0; border-left: 3px solid var(--tertiary-sage); padding-left: 12px; }
+    
+    #decorative-image-container {
+      flex-shrink: 0;
+      width: 180px;
+      height: 120px;
+      background-color: var(--warm-cream);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-sage);
+    }
+    #decorative-image-container img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .placeholder-loader { width: 24px; height: 24px; border: 3px solid var(--hover-sage); border-top-color: var(--secondary-sage); border-radius: 50%; animation: spin 1s linear infinite; }
+
+    /* --- Linking Activity Styles --- */
+    .slide-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: 400px;
+    }
+    
+    .linking-container {
+        position: relative;
+        flex-grow: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 40px;
+        align-content: start;
+        margin-bottom: 24px;
+    }
+
+    .linking-canvas {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 5;
+    }
+    
+    .link-column {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 6;
+    }
+
+    .linking-item {
+        background-color: var(--warm-cream);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        border: 1px solid var(--border-sage);
+        min-height: 50px;
+        box-shadow: 0 2px 8px rgba(122, 132, 113, 0.05);
+    }
+
+    .linking-item-text {
+        padding: 12px 16px;
+        flex-grow: 1;
+        text-align: center;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
+        color: var(--forest-shadow);
+        font-weight: 600;
+    }
+
+    .linking-item-connector {
+        width: 18px;
+        height: 18px;
+        background-color: var(--connector-color);
+        border: 3px solid var(--soft-white);
+        border-radius: 50%;
+        cursor: pointer;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: -10px;
+        z-index: 10;
+        box-shadow: 0 1px 6px rgba(90,107,82,0.3);
+        transition: transform 0.2s;
+    }
+    .linking-item-connector:hover {
+        transform: translateY(-50%) scale(1.1);
+    }
+    .link-column.right .linking-item-connector {
+        left: -10px;
+        right: auto;
+    }
+
+    /* Connection Effect */
+    .connection-ping {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: var(--connector-color);
+        animation: ping-effect 0.6s ease-out;
+        pointer-events: none;
+    }
+
+    @keyframes ping-effect {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.7;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(3.5);
+        opacity: 0;
+      }
+    }
+    
+    .linking-controls {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-sage);
+    }
+    
+    .activity-btn {
+        padding: 12px 24px; border-radius: 12px; border: 1px solid var(--primary-sage);
+        background-color: var(--primary-sage); color: white; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+    }
+    .activity-btn:hover { background-color: var(--forest-shadow); transform: translateY(-1px); }
+    .activity-btn:disabled { background-color: var(--tertiary-sage); cursor: not-allowed; border-color: var(--tertiary-sage); transform: none; }
+    
+    .activity-btn.secondary { background-color: transparent; color: var(--primary-sage); border-color: var(--tertiary-sage); }
+    .activity-btn.secondary:hover { background-color: var(--hover-sage); }
+    
+    /* Feedback Sidebar Styles */
+    #feedback-sidebar { 
+        position: fixed; top: 0; right: 0; width: 100%; height: 100%; 
+        background: var(--warm-cream); border-left: 1px solid var(--border-sage); 
+        box-shadow: -8px 0 32px rgba(90, 107, 82, 0.1); z-index: 1000; 
+        transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1); 
+        display: flex; flex-direction: column; box-sizing: border-box; 
+    }
+    @media (min-width: 1024px) { #feedback-sidebar { width: var(--feedback-width-desktop); height: 100vh; } }
+    #app-wrapper.feedback-visible #feedback-sidebar { transform: translateX(0); }
+    .feedback-header { padding: 24px; border-bottom: 1px solid var(--border-sage); }
+    .feedback-header h3 { font-family: var(--font-display); font-size: 1.8rem; color: var(--forest-shadow); margin: 0 0 8px 0; }
+    #feedback-score { font-size: 1.1rem; font-weight: 600; color: var(--primary-sage); }
+    #feedback-details { flex-grow: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .feedback-item { background: var(--soft-white); border: 1px solid var(--border-sage); border-left-width: 4px; border-radius: 8px; padding: 16px; }
+    .feedback-item.correct { border-left-color: var(--correct-border); }
+    .feedback-item.incorrect { border-left-color: var(--incorrect-border); }
+    .feedback-item h4 { margin: 0 0 12px 0; font-size: 1.1rem; color: var(--forest-shadow); }
+    .feedback-item p { margin: 0 0 8px 0; font-size: 0.95rem; line-height: 1.6; color: var(--primary-sage); }
+    .feedback-item p strong { color: var(--forest-shadow); }
+    .feedback-item .explanation { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-sage); }
+    .feedback-footer { padding: 24px; border-top: 1px solid var(--border-sage); text-align: center; background: var(--warm-cream); }
+    
+    /* --- MOBILE OPTIMISATIONS --- */
+    @media (max-width: 767px) {
+        #app-wrapper {
+            padding: 1rem;
+        }
+        #activity-container {
+            padding: 24px;
+        }
+        #activity-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+        }
+        h1 {
+            font-size: 2rem;
+        }
+        h2.rubric {
+            font-size: 1rem;
+            border-left: none;
+            padding-left: 0;
+            max-width: 95%;
+            margin: 0 auto;
+        }
+        #decorative-image-container {
+            width: 100%;
+            height: 150px;
+        }
+
+        /* Stack the linking columns and adjust connectors for vertical linking */
+        .linking-container {
+            grid-template-columns: 1fr; /* Stack the columns */
+            gap: 30px; /* Increased gap for vertical space */
+        }
+        .link-column {
+            gap: 30px; /* Space out items vertically for connectors */
+        }
+        .linking-item {
+            padding-bottom: 15px; /* Add space for bottom connector */
+            padding-top: 15px;    /* Add space for top connector */
+        }
+        .linking-item-connector {
+            right: 50%;
+            transform: translate(50%, -50%);
+            top: auto;
+            bottom: 0;
+        }
+        .link-column.right .linking-item-connector {
+            left: 50%;
+            right: auto;
+            top: 0;
+            bottom: auto;
+        }
+        
+        /* Ensure no margin shift for feedback panel on mobile */
+        #app-wrapper.feedback-visible #activity-container {
+            margin-right: 0;
+        }
+
+        /* Feedback panel font sizes and padding */
+        .feedback-header, .feedback-details, .feedback-footer {
+            padding: 20px;
+        }
+        .feedback-header h3 {
+            font-size: 1.6rem;
+        }
+    }
+  </style>
+</head>
+<body>
+  
+<div id="app-wrapper">
+    <div id="activity-container" 
+         data-query-theme="synonyms antonyms vocabulary"
+         data-answer-key='[
+            {"start": "L1", "end": "R3"},
+            {"start": "L2", "end": "R1"},
+            {"start": "L3", "end": "R2"}
+         ]'>
+        
+        <div id="activity-header">
+            <div id="activity-titles">
+                <h1>Vocabulary Matching</h1>
+                <h2 class="rubric">Match each word to its correct synonym.</h2>
+            </div>
+            <div id="decorative-image-container">
+                <div class="placeholder-loader"></div>
+            </div>
+        </div>
+        
+        <div class="slide-content-wrapper">
+            <div class="linking-container">
+                <canvas class="linking-canvas"></canvas>
+                <div class="link-column left">
+                    <div class="linking-item" data-link-id="L1" data-explanation="'Ubiquitous' means present, appearing, or found everywhere, which is a direct synonym for 'omnipresent'.">
+                        <div class="linking-item-text">Ubiquitous</div>
+                        <div class="linking-item-connector"></div>
+                    </div>
+                    <div class="linking-item" data-link-id="L2" data-explanation="'Ephemeral' describes something that lasts for a very short time, which is synonymous with 'fleeting'.">
+                        <div class="linking-item-text">Ephemeral</div>
+                        <div class="linking-item-connector"></div>
+                    </div>
+                    <div class="linking-item" data-link-id="L3" data-explanation="'Malleable' means easily influenced or pliable, making it a synonym for 'impressionable'.">
+                        <div class="linking-item-text">Malleable</div>
+                        <div class="linking-item-connector"></div>
+                    </div>
+                </div>
+
+                <div class="link-column right">
+                    <div class="linking-item" data-link-id="R1"><div class="linking-item-text">Fleeting</div><div class="linking-item-connector"></div></div>
+                    <div class="linking-item" data-link-id="R2"><div class="linking-item-text">Impressionable</div><div class="linking-item-connector"></div></div>
+                    <div class="linking-item" data-link-id="R3"><div class="linking-item-text">Omnipresent</div><div class="linking-item-connector"></div></div>
+                </div>
+                
+                <div class="linking-controls">
+                   <button id="check-answers-btn" class="activity-btn linking-check-btn">Check Answers</button>
+                   <button id="reset-btn" class="activity-btn secondary linking-reset-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="feedback-sidebar"></div>
+</div>
+
+<script>
+const App = {
+    init() {
+        ImageFetcher.initSingleImage();
+        FeedbackPanel.init();
+        StandaloneLinkingActivity.init();
+    }
+};
+
+const ImageFetcher = {
+    API_KEY: 'xgmzSrq1PBV9ELvW4mSlyq6vAf0k6qDrrMd1zIpLrIheWepQ32zN4iJk',
+    async initSingleImage() {
+        const container = document.getElementById('decorative-image-container');
+        const themeQuery = document.getElementById('activity-container').dataset.queryTheme;
+        if (!container || !themeQuery) return;
+        const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(themeQuery)}&per_page=1&orientation=landscape`;
+        await this.fetchAndApply(url, container, themeQuery);
+    },
+    async fetchAndApply(url, container, queryForAlt) {
+         try {
+            const response = await fetch(url, { headers: { Authorization: this.API_KEY } });
+            if (!response.ok) throw new Error(`Pexels API error: ${response.statusText}`);
+            const data = await response.json();
+            const photo = data.photos[0];
+            if (photo) {
+                const img = document.createElement('img');
+                img.src = photo.src.landscape; 
+                img.alt = photo.alt || `Decorative image related to ${queryForAlt}`;
+                img.onload = () => { container.innerHTML = ''; container.appendChild(img); };
+                img.onerror = () => { container.innerHTML = 'X'; };
+            } else { container.innerHTML = '?'; }
+        } catch (error) {
+            console.error(`Failed to fetch image for "${queryForAlt}":`, error);
+            container.innerHTML = '!';
+        }
+    }
+};
+
+const FeedbackPanel = {
+  dom: {},
+  init() {
+    document.getElementById('feedback-sidebar').innerHTML = `<div class="feedback-header"><h3>Your Results</h3><p id="feedback-score"></p></div><div id="feedback-details"></div><div class="feedback-footer"><button id="feedback-close-btn" class="activity-btn secondary">Try Again</button></div>`;
+    this.dom.appWrapper = document.getElementById('app-wrapper'); 
+    this.dom.feedbackSidebar = document.getElementById('feedback-sidebar'); 
+    this.dom.feedbackScore = document.getElementById('feedback-score'); 
+    this.dom.feedbackDetails = document.getElementById('feedback-details'); 
+    this.dom.feedbackCloseBtn = document.getElementById('feedback-close-btn'); 
+    this.bindEvents();
+  },
+  bindEvents() { 
+    this.dom.feedbackCloseBtn.addEventListener('click', () => { 
+        this.hide(); 
+        StandaloneLinkingActivity.resetActivity(); 
+    }); 
+  },
+  clear() { this.dom.feedbackDetails.innerHTML = ''; },
+  addDetail(data) {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = `feedback-item ${data.isCorrect ? 'correct' : 'incorrect'}`;
+    itemDiv.innerHTML = `<h4>${data.itemName}</h4>
+                         <p><strong>Your Answer:</strong> ${data.studentAnswer}</p>
+                         ${!data.isCorrect ? `<p><strong>Correct Answer:</strong> ${data.correctAnswer}</p>` : ''}
+                         <div class="explanation"><p>${data.explanation}</p></div>`;
+    this.dom.feedbackDetails.appendChild(itemDiv);
+  },
+  show(score, total) {
+    this.dom.feedbackScore.textContent = total > 0 ? `You scored ${score} out of ${total}.` : `Make some connections to get feedback.`;
+    this.dom.appWrapper.classList.add('feedback-visible'); 
+    document.body.classList.add('feedback-open');
+  },
+  hide() { 
+    this.dom.appWrapper.classList.remove('feedback-visible'); 
+    document.body.classList.remove('feedback-open'); 
+  }
+};
+
+const StandaloneLinkingActivity = {
+    state: {},
+
+    init() {
+        const slideElement = document.getElementById('activity-container');
+        const container = slideElement.querySelector('.linking-container');
+        const canvas = slideElement.querySelector('.linking-canvas');
+        this.state = { slideElement, container, canvas, ctx: canvas.getContext('2d'), studentLinks: [], isLinking: false, startPoint: null, currentLine: null, resizeObserver: new ResizeObserver(() => this.resizeCanvas()) };
+        this.bindEvents();
+        this.resizeCanvas();
+        this.state.resizeObserver.observe(container);
+    },
+
+    getPointPos(connectorElement) {
+        const canvasRect = this.state.canvas.getBoundingClientRect();
+        const connectorRect = connectorElement.getBoundingClientRect();
+        return {
+            x: connectorRect.left + connectorRect.width / 2 - canvasRect.left,
+            y: connectorRect.top + connectorRect.height / 2 - canvasRect.top,
+        };
+    },
+
+    resizeCanvas() {
+        this.state.canvas.width = this.state.container.offsetWidth;
+        this.state.canvas.height = this.state.container.offsetHeight;
+        this.redrawLines();
+    },
+
+    bindEvents() {
+        this.state.slideElement.addEventListener('mousedown', e => this.handleMouseDown(e));
+        document.addEventListener('mousemove', e => this.handleMouseMove(e));
+        document.addEventListener('mouseup', e => this.handleMouseUp(e));
+        this.state.slideElement.querySelector('#check-answers-btn').addEventListener('click', () => this.checkAnswers());
+        this.state.slideElement.querySelector('#reset-btn').addEventListener('click', () => this.resetActivity());
+    },
+    
+    handleMouseDown(e) {
+        const connector = e.target.closest('.linking-item-connector');
+        if (connector) {
+            this.state.isLinking = true;
+            this.state.startPoint = connector.closest('.linking-item');
+            e.preventDefault();
+        }
+    },
+    
+    handleMouseMove(e) {
+        if (!this.state.isLinking) return;
+        const startPos = this.getPointPos(this.state.startPoint.querySelector('.linking-item-connector'));
+        const canvasRect = this.state.canvas.getBoundingClientRect();
+        this.state.currentLine = { start: startPos, end: { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top } };
+        this.redrawLines();
+    },
+    
+    handleMouseUp(e) {
+        if (!this.state.isLinking) return;
+        const endConnector = e.target.closest('.linking-item-connector');
+        if (endConnector) {
+            const endPoint = endConnector.closest('.linking-item');
+            if (endPoint && endPoint !== this.state.startPoint && endPoint.parentElement !== this.state.startPoint.parentElement) {
+                const newLink = { startId: this.state.startPoint.dataset.linkId, endId: endPoint.dataset.linkId };
+                this.state.studentLinks.push(newLink);
+                this.showConnectionEffect(endConnector);
+            }
+        }
+        this.state.isLinking = false;
+        this.state.startPoint = null;
+        this.state.currentLine = null;
+        this.redrawLines();
+    },
+    
+    showConnectionEffect(connectorElement) {
+        const ping = document.createElement('div');
+        ping.className = 'connection-ping';
+        connectorElement.appendChild(ping);
+        setTimeout(() => ping.remove(), 600);
+    },
+
+    redrawLines() {
+        const { ctx, canvas } = this.state;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.state.studentLinks.forEach(link => this.drawLine(link, getComputedStyle(document.documentElement).getPropertyValue('--student-line-color').trim(), []));
+        if (this.state.currentLine) {
+            ctx.beginPath();
+            ctx.moveTo(this.state.currentLine.start.x, this.state.currentLine.start.y);
+            ctx.lineTo(this.state.currentLine.end.x, this.state.currentLine.end.y);
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--current-line-color').trim();
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    },
+    
+    drawLine(link, color, dash) {
+        const startEl = this.state.slideElement.querySelector(`[data-link-id="${link.startId}"]`);
+        const endEl = this.state.slideElement.querySelector(`[data-link-id="${link.endId}"]`);
+        if (startEl && endEl) {
+            const startPos = this.getPointPos(startEl.querySelector('.linking-item-connector'));
+            const endPos = this.getPointPos(endEl.querySelector('.linking-item-connector'));
+            const { ctx } = this.state;
+            ctx.beginPath();
+            ctx.setLineDash(dash);
+            ctx.moveTo(startPos.x, startPos.y);
+            ctx.lineTo(endPos.x, endPos.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    },
+
+    getAnswerKey() {
+        try {
+            return JSON.parse(this.state.slideElement.dataset.answerKey || '[]');
+        } catch { return []; }
+    },
+
+    checkAnswers() {
+        const answerKey = this.getAnswerKey();
+        const studentAnswers = this.state.studentLinks;
+        const checkBtn = document.getElementById('check-answers-btn');
+
+        if (answerKey.length === 0) {
+            alert("Error: No answer key is defined for this activity.");
+            return;
+        }
+
+        const studentMap = new Map(studentAnswers.map(link => [link.startId, link.endId]));
+        const correctMap = new Map(answerKey.map(link => [link.start, link.end]));
+
+        let score = 0;
+        FeedbackPanel.clear();
+
+        const leftItems = this.state.slideElement.querySelectorAll('.link-column.left .linking-item');
+        
+        leftItems.forEach(leftItem => {
+            const leftId = leftItem.dataset.linkId;
+            const itemName = leftItem.querySelector('.linking-item-text').textContent;
+            const explanation = leftItem.dataset.explanation || "No explanation available.";
+            
+            const studentLinkedId = studentMap.get(leftId);
+            const correctLinkedId = correctMap.get(leftId);
+            
+            const studentAnswerText = studentLinkedId 
+                ? this.state.slideElement.querySelector(`[data-link-id="${studentLinkedId}"] .linking-item-text`).textContent
+                : "Not Answered";
+            
+            const correctAnswerText = correctLinkedId
+                ? this.state.slideElement.querySelector(`[data-link-id="${correctLinkedId}"] .linking-item-text`).textContent
+                : "N/A";
+
+            const isCorrect = studentLinkedId === correctLinkedId;
+            if(isCorrect) score++;
+
+            FeedbackPanel.addDetail({
+                isCorrect,
+                itemName,
+                studentAnswer: studentAnswerText,
+                correctAnswer: correctAnswerText,
+                explanation
+            });
+        });
+
+        FeedbackPanel.show(score, answerKey.length);
+        if (checkBtn) checkBtn.disabled = true;
+    },
+    
+    resetActivity() {
+        this.state.studentLinks = [];
+        this.redrawLines();
+        const checkBtn = document.getElementById('check-answers-btn');
+        if (checkBtn) checkBtn.disabled = false;
+        FeedbackPanel.hide(); // Ensure panel is hidden if called from "Try Again"
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
