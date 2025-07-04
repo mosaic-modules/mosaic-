@@ -104,6 +104,7 @@
     /* Feedback, sorting, and category styles are largely the same */
     .dnd-item.sortable-ghost { background-color: var(--hover-sage); border-style: dashed; color: transparent; }
     .dnd-item.sortable-chosen { cursor: grabbing; transform: scale(1.05); }
+    .dnd-item.selected { outline: 2px dashed var(--clay-brown); }
     #category-zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
     .dnd-category-zone { padding: 20px; border: 1px solid var(--border-sage); border-radius: 16px; background-color: #fdfdfc; display: flex; flex-direction: column; }
     .dnd-category-zone h3 { margin: 0 0 16px 0; text-align: center; color: var(--clay-brown); font-family: var(--font-display); }
@@ -296,6 +297,7 @@ const FeedbackPanel = { /* JS for Feedback Panel is unchanged */
 
 const DragAndDropManager = { /* JS for Drag and Drop is mostly unchanged */
     originalItems: [],
+    selectedItem: null,
     init() { this.cacheDOM(); this.storeOriginalState(); this.initSortable(); this.bindEvents(); },
     cacheDOM() { this.container = document.getElementById('activity-container'); this.itemsPoolContainer = document.getElementById('items-pool'); this.categoryZones = document.querySelectorAll('.dnd-category-zone'); this.checkBtn = document.getElementById('check-answers-btn'); },
     storeOriginalState() { this.originalItems = this.itemsPoolContainer.innerHTML; },
@@ -303,7 +305,25 @@ const DragAndDropManager = { /* JS for Drag and Drop is mostly unchanged */
         const lists = [this.itemsPoolContainer, ...Array.from(this.categoryZones).map(zone => zone.querySelector('.dnd-list'))];
         lists.forEach(list => { new Sortable(list, { group: 'shared-group', animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', dragClass: 'sortable-drag' }); });
     },
-    bindEvents() { this.checkBtn.addEventListener('click', () => this.checkAnswers()); },
+    bindEvents() {
+        this.checkBtn.addEventListener('click', () => this.checkAnswers());
+        this.container.addEventListener('click', e => this.handleClick(e));
+    },
+    handleClick(e) {
+        const item = e.target.closest('.dnd-item');
+        if (item) {
+            if (this.selectedItem) this.selectedItem.classList.remove('selected');
+            this.selectedItem = item;
+            item.classList.add('selected');
+            return;
+        }
+        const zone = e.target.closest('.dnd-category-zone .dnd-list, #items-pool');
+        if (zone && this.selectedItem) {
+            zone.appendChild(this.selectedItem);
+            this.selectedItem.classList.remove('selected');
+            this.selectedItem = null;
+        }
+    },
     checkAnswers() {
         let totalCorrect = 0, totalAttempted = 0;
         this.clearInlineFeedback(); FeedbackPanel.clear();

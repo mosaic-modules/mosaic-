@@ -101,6 +101,7 @@
 
     .dnd-item.sortable-ghost { background-color: var(--hover-sage); border-style: dashed; color: transparent; }
     .dnd-item.sortable-chosen { cursor: grabbing; transform: scale(1.05); }
+    .dnd-item.selected { outline: 2px dashed var(--clay-brown); }
 
     /* --- RANKING-SPECIFIC STYLES --- */
     #ranking-zone-container {
@@ -327,6 +328,7 @@ const FeedbackPanel = {
 
 const DragAndDropManager = {
     originalItems: [],
+    selectedItem: null,
     init() { this.cacheDOM(); this.storeOriginalState(); this.initSortable(); this.bindEvents(); },
     cacheDOM() {
         this.container = document.getElementById('activity-container');
@@ -350,7 +352,25 @@ const DragAndDropManager = {
             }); 
         });
     },
-    bindEvents() { this.checkBtn.addEventListener('click', () => this.checkAnswers()); },
+    bindEvents() {
+        this.checkBtn.addEventListener('click', () => this.checkAnswers());
+        this.container.addEventListener('click', e => this.handleClick(e));
+    },
+    handleClick(e) {
+        const item = e.target.closest('.dnd-item');
+        if (item) {
+            if (this.selectedItem) this.selectedItem.classList.remove('selected');
+            this.selectedItem = item;
+            item.classList.add('selected');
+            return;
+        }
+        const zone = e.target.closest('#ranking-list, #items-pool');
+        if (zone && this.selectedItem) {
+            zone.appendChild(this.selectedItem);
+            this.selectedItem.classList.remove('selected');
+            this.selectedItem = null;
+        }
+    },
     checkAnswers() {
         let totalCorrect = 0;
         const rankedItems = this.rankingZone.querySelectorAll('.dnd-item');
