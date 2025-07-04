@@ -233,11 +233,11 @@
 <body>
 
   <div id="app-wrapper">
-    <div id="activity-container" data-query-theme="water cycle diagram">
+    <div id="activity-container" data-query-theme="olive tree olives ">
 
       <div id="activity-header">
         <div id="activity-titles">
-          <h1>The Water Cycle</h1>
+          <h1>Tatreez: A Stitched History</h1>
           <h2 class="rubric">Listen, fill the gaps, and use the player to control the audio.</h2>
         </div>
         <div id="decorative-image-container">
@@ -297,7 +297,7 @@
   </div>
 
 <script>
-// No changes were made to the JavaScript, so the original script is maintained.
+// No change in the JavaScript logic is needed. It will automatically use the new query.
 const App = {
     init() {
         ImageFetcher.initSingleImage();
@@ -351,7 +351,7 @@ const FeedbackPanel = {
 const ListeningActivityManager = {
     dom: {},
     state: { fullText: '', voices: [], utterance: null, currentHighlightSpan: null, isScrubbing: false },
-    sourceText: "The water cycle, also known as the hydrologic cycle, describes the continuous movement of water on, above, and below the surface of the Earth. This cycle is vital for all life. Water can change states among liquid, vapor, and ice at various places. The main processes are evaporation, transpiration, condensation, precipitation, and runoff. Evaporation is when the sun heats water in rivers or lakes and turns it into vapor. Transpiration is the process where plants release water vapor from their leaves. Condensation occurs when this vapor rises, cools, and turns back into liquid, forming clouds. When the clouds get too heavy, they release the water as precipitation, like rain or snow. Finally, runoff is the flow of water over the land back into rivers and oceans.",
+    sourceText: "Through the cultural practice of embroidery known as tatreez, Palestinian women and girls decorated their thobe (or dress) with symbols of history, memory, and place, telling the tale of the maker’s life and her connection to the land through an illustrative medium of colorfully stitched motifs. Until the mid-twentieth century, Palestinian dress styles reflected an “individual or a place: a wife, a mother, a daughter, a family, a house, a village, a town, a field, a market.”[6] The thobe marks the owner’s life and explicitly holds a woman’s biographical details through the needlework techniques used, the threads chosen, and the harmonious balance of colors, as well as each maker’s interpretation of traditional patterns that tell her story in stitches.",
     
     init() {
         this.cacheDOM();
@@ -442,7 +442,7 @@ const ListeningActivityManager = {
             if (/\S/.test(word)) {
                 wordCount++;
                 if (wordCount % frequency === 0 && word.length > 3) {
-                    const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\[\]]/g,"");
                     const input = document.createElement('input');
                     input.type = 'text'; input.className = 'gap-input';
                     input.setAttribute('data-correct', cleanWord);
