@@ -326,7 +326,7 @@ h3.section-title {
       // !!! INSECURE - FOR DEMO ONLY. API KEY IS EXPOSED.
       API_KEY: "e015e88b576742a19718aebab2bc4465",
       TRANSCRIPT_ID: null,
-      KEYWORDS: ['Palestine', 'West Bank', 'Jerusalem', 'community'],
+      KEYWORDS: ['Palestine', 'life']
 
       init(audioUrl) {
         const container = document.getElementById('gap-fill-container');
