@@ -138,6 +138,11 @@ h3.section-title {
 }
 .action-button:hover:not(:disabled) { background-color: var(--forest-shadow); }
 .action-button:disabled { background-color: var(--tertiary-sage); cursor: not-allowed; }
+.tts-controls {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
 
 #gap-fill-container {
     margin-top: 24px;
@@ -228,6 +233,10 @@ h3.section-title {
 
       <div id="listening-activity-content">
         <audio controls id="podcast-audio">Your browser fails to handle audio playback.</audio>
+        <div class="tts-controls">
+            <button id="speak-btn" class="action-button">Play Transcript</button>
+            <button id="stop-btn" class="action-button" disabled>Stop</button>
+        </div>
         
         <div id="gap-fill-container" style="display: none;">
             <h3 class="section-title">Transcript Gap-Fill</h3>
@@ -247,6 +256,7 @@ h3.section-title {
       async init() {
         ImageFetcher.initSingleImage();
         await PodcastLoader.initFromListenNotes();
+        TextToSpeech.init();
       },
     };
 
@@ -415,9 +425,46 @@ h3.section-title {
                 }
                 input.disabled = true;
             });
-            checkBtn.disabled = true;
-            statusEl.textContent = allCorrect ? 'Great job! All answers are correct.' : 'Answers have been checked. Review the highlighted fields.';
-        };
+        checkBtn.disabled = true;
+        statusEl.textContent = allCorrect ? 'Great job! All answers are correct.' : 'Answers have been checked. Review the highlighted fields.';
+      };
+      }
+    };
+
+    const TextToSpeech = {
+      voices: [],
+      init() {
+        this.loadVoices();
+        if (window.speechSynthesis) {
+          speechSynthesis.onvoiceschanged = () => this.loadVoices();
+        }
+        const speakBtn = document.getElementById('speak-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        if (speakBtn)
+          speakBtn.addEventListener('click', () => {
+            const text = document.getElementById('gap-fill-text').textContent || document.getElementById('episode-rubric').textContent;
+            this.speak(text);
+          });
+        if (stopBtn)
+          stopBtn.addEventListener('click', () => this.stop());
+      },
+      loadVoices() {
+        this.voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+      },
+      speak(text) {
+        if (!window.speechSynthesis) return;
+        this.stop();
+        const utter = new SpeechSynthesisUtterance(text);
+        if (this.voices.length > 0) utter.voice = this.voices[0];
+        speechSynthesis.speak(utter);
+        document.getElementById('stop-btn').disabled = false;
+      },
+      stop() {
+        if (window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending)) {
+          speechSynthesis.cancel();
+        }
+        const stopBtn = document.getElementById('stop-btn');
+        if (stopBtn) stopBtn.disabled = true;
       }
     };
 
