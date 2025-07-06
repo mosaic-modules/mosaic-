@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundscape Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Questrial&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.lordicon.com/lordicon.js"></script>
+
+    <style>
+        :root {
+            --primary-sage: #7A8471;
+            --secondary-sage: #9CAF88;
+            --tertiary-sage: #B8C5A6;
+            --warm-cream: #F8F6F0;
+            --soft-white: #FEFCF7;
+            --forest-shadow: #5A6B52;
+            --border-sage: rgba(122, 132, 113, 0.2);
+            --hover-sage: rgba(156, 175, 136, 0.15);
+            --font-display: 'Questrial', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+            --rotation: -135deg;
+        }
+
+        /* * FIX 3.1: Use dynamic viewport height (dvh) to correctly account for
+         * mobile browser UI (like the URL bar), preventing layout bugs on iOS.
+         * Let the body scroll if content overflows.
+        */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh; /* Use dynamic viewport height */
+            font-family: var(--font-body);
+            background: var(--warm-cream);
+            overflow: auto; /* Allow scrolling instead of hiding */
+        }
+        
+        /* * FIX 3.2: Use Flexbox for robust, responsive centering. This avoids
+         * issues with `transform: translate()` where content can overflow its
+         * container on small screens.
+        */
+        #quote-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Vertical centering */
+            align-items: center;     /* Horizontal centering */
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            text-align: center;
+            padding: 1rem; /* Add padding for space on small devices */
+            box-sizing: border-box;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .quote-wrapper {
+            width: 100%;
+            max-width: 800px;
+            /* position, top, left, and transform removed for flexbox centering */
+        }
+
+        #quote-view, #explanation-view {
+            width: 100%;
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+        }
+        
+        #quote-view { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        #explanation-view { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        .is-visible { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
+        .is-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+
+        .quote-icon { display: none; margin: 0 auto 1rem; opacity: 0; transition: opacity 1.5s ease-in-out; }
+        .quote-icon.active { display: block; }
+        .quote-icon.visible { opacity: 1; }
+
+        #quote-text {
+            font-family: var(--font-display);
+            /* Already using clamp, which is great practice */
+            font-size: clamp(1.5rem, 3vw, 3rem);
+            color: var(--forest-shadow);
+            margin: 0;
+            line-height: 1.4;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+        
+        #quote-author {
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            color: var(--primary-sage);
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out 0.3s;
+        }
+        
+        #quote-text.visible, #quote-author.visible { opacity: 1; }
+
+        #explanation-text {
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: clamp(1.25rem, 2.5vw, 2rem);
+            line-height: 1.6;
+            color: var(--forest-shadow);
+        }
+
+        #return-button {
+            margin-top: 2rem; padding: 12px 28px; font-family: var(--font-body); font-weight: 700;
+            font-size: 1rem; color: var(--primary-sage); background: transparent; border: 2px solid var(--border-sage);
+            border-radius: 50px; cursor: pointer; transition: all 0.2s;
+        }
+        #return-button:hover { background: var(--hover-sage); border-color: var(--primary-sage); }
+
+        #settings-toggle {
+            position: fixed; top: 1.5rem; right: 1.5rem; width: 32px; height: 32px; z-index: 1001;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        #settings-toggle svg { width: 100%; height: 100%; fill: var(--primary-sage); transition: transform 0.4s ease-in-out; }
+        body.controls-open #settings-toggle svg { transform: rotate(90deg); }
+
+        #controls-panel {
+            position: fixed; top: 0; right: 0; height: 100dvh; /* Use dvh here as well */
+            width: 100%;
+            /* FIX 3.3: Use min() to ensure the panel has padding on narrow screens */
+            max-width: min(420px, 95%);
+            z-index: 1000; background: var(--soft-white); border-left: 1px solid var(--border-sage);
+            box-shadow: -8px 0 32px rgba(122, 132, 113, 0.15); transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); box-sizing: border-box; user-select: none;
+        }
+        
+        body.controls-open #controls-panel { transform: translateX(0); }
+        
+        /* When controls are open, shift the main content left */
+        body.controls-open #quote-container {
+             transform: translateX(calc(-1 * min(420px, 95%) / 2));
+        }
+
+        #activity-container {
+            width: 100%; height: 100%; box-sizing: border-box; padding: 48px 24px;
+            overflow-y: auto; display: flex; flex-direction: column; gap: 18px;
+        }
+
+        /* FIX 3.3: Use clamp() for fluid typography on the main heading */
+        h1 { 
+            font-family: var(--font-display); 
+            font-size: clamp(1.6rem, 4vw + 0.5rem, 2.2rem);
+            color: var(--forest-shadow); 
+            margin: 0 0 16px 0; 
+            text-align: center; 
+        }
+        
+        .activity-btn { padding: 15px 24px; border-radius: 12px; border: 1px solid var(--primary-sage); background-color: var(--primary-sage); color: white; font-family: var(--font-body); font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .activity-btn:hover { background-color: var(--forest-shadow); transform: translateY(-1px); }
+        .activity-btn:active { transform: scale(0.98) translateY(0); }
+        .control-group { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 16px 20px; border: 1px solid var(--border-sage); border-radius: 16px; background-color: var(--warm-cream); }
+        .knob-wrapper { position: relative; width: 70px; height: 70px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        
+        .knob {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 100%; background: transparent; cursor: pointer;
+            position: absolute; top: 0; left: 0; margin: 0; outline: none; -webkit-tap-highlight-color: transparent;
+        }
+        .knob:focus { outline: none; }
+        .knob::-webkit-slider-runnable-track, .knob::-moz-range-track { background: transparent; border: none; width: 100%; height: 100%; cursor: pointer; }
+        .knob::-webkit-slider-thumb, .knob::-moz-range-thumb { -webkit-appearance: none; appearance: none; width: 1px; height: 1px; background: transparent; border: none; }
+        .knob-visual { width: 60px; height: 60px; border-radius: 50%; background: var(--soft-white); border: 3px solid var(--tertiary-sage); box-shadow: 0 4px 12px rgba(122, 132, 113, 0.1), inset 0 2px 2px rgba(255, 255, 255, 0.7); pointer-events: none; transform: rotate(var(--rotation, -135deg)); transition: transform 0.1s linear; }
+        .knob-visual::after { content: ''; position: absolute; width: 5px; height: 15px; background: var(--primary-sage); top: 5px; left: 50%; transform: translateX(-50%); border-radius: 3px; }
+
+        .control-label-group { display: flex; flex-direction: column; align-items: flex-start; flex-grow: 1; }
+        .control-label { font-family: var(--font-body); font-weight: 700; font-size: 1.2rem; color: var(--forest-shadow); line-height: 1.4; margin-bottom: 8px; }
+        .readout { font-family: 'Nunito', sans-serif; font-feature-settings: "tnum"; font-size: 1.1rem; font-weight: 600; color: var(--primary-sage); background-color: var(--soft-white); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border-sage); min-width: 80px; text-align: left; }
+        .wind-control-wrapper { padding: 16px 20px; border: 1px solid var(--border-sage); border-radius: 16px; background-color: var(--warm-cream); }
+        .wind-control-wrapper .control-label { text-align: center; width: 100%; margin-bottom: 12px; }
+        #wind-pad-container { width: 100%; display: flex; justify-content: center; }
+        #wind-pad { width: 100%; height: 150px; background-color: var(--soft-white); border: 2px solid var(--tertiary-sage); border-radius: 12px; position: relative; cursor: crosshair; box-shadow: inset 0 1px 4px rgba(122, 132, 113, 0.15); touch-action: none; }
+        #wind-puck { position: absolute; width: 24px; height: 24px; background-color: var(--primary-sage); border-radius: 50%; border: 2px solid var(--soft-white); transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 0 10px var(--forest-shadow); left: 50%; top: 100%; }
+        
+        @media (max-width: 767px) {
+            #activity-container { padding: 48px 24px; }
+            h1 { font-size: clamp(1.6rem, 6vw, 2rem); }
+            #settings-toggle { top: 1rem; right: 1rem; }
+            .control-group { padding: 12px 16px; }
+            /* When controls open on mobile, don't shift content */
+            body.controls-open #quote-container { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="quote-container">
+    <div class="quote-wrapper">
+        <div id="quote-view" class="is-visible">
+            <lord-icon class="quote-icon" id="icon-0" src="https://cdn.lordicon.com/wmelwzdo.json" trigger="loop" delay="2000" style="width:250px;height:250px"></lord-icon>
+            <lord-icon class="quote-icon" id="icon-1" src="https://cdn.lordicon.com/pvcjstvn.json" trigger="loop" delay="2000" style="width:250px;height:250px"></lord-icon>
+            <lord-icon class="quote-icon" id="icon-2" src="https://cdn.lordicon.com/grtdxnvd.json" trigger="loop" delay="2000" style="width:250px;height:250px"></lord-icon>
+            <lord-icon class="quote-icon" id="icon-3" src="https://cdn.lordicon.com/zmpoljsc.json" trigger="loop" delay="2000" style="width:250px;height:250px"></lord-icon>
+            <p id="quote-text"></p>
+            <cite id="quote-author"></cite>
+        </div>
+        <div id="explanation-view">
+            <p id="explanation-text"></p>
+            <button id="return-button">Return</button>
+        </div>
+    </div>
+</div>
+
+<div id="settings-toggle">
+    <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+</div>
+
+<div id="controls-panel">
+    <div id="activity-container">
+        <h1>Synthesizer Controls</h1>
+        <button class="activity-btn" id="play-button">Play</button>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="richness-visual"></div><input type="range" min="4" max="8" value="6" step="1" class="knob" id="richness-knob"></div>
+            <div class="control-label-group"><label for="richness-knob" class="control-label">Richness</label><span class="readout" id="richness-readout">6</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="chorus-visual"></div><input type="range" min="0" max="15" value="6" step="0.1" class="knob" id="chorus-knob"></div>
+            <div class="control-label-group"><label for="chorus-knob" class="control-label">Shimmer</label><span class="readout" id="chorus-readout">6.0 cent</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="space-visual"></div><input type="range" min="0" max="0.40" value="0.40" step="0.01" class="knob" id="space-knob"></div>
+            <div class="control-label-group"><label for="space-knob" class="control-label">Space</label><span class="readout" id="space-readout">0.40</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="depth-visual"></div><input type="range" min="0" max="0.6" value="0.3" step="0.01" class="knob" id="depth-knob"></div>
+            <div class="control-label-group"><label for="depth-knob" class="control-label">Deep Sounds</label><span class="readout" id="depth-readout">0.30</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="movement-visual"></div><input type="range" min="0" max="1" value="0.5" step="0.01" class="knob" id="movement-knob"></div>
+            <div class="control-label-group"><label for="movement-knob" class="control-label">Speed</label><span class="readout" id="movement-readout">1.0 Hz</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="motion-visual"></div><input type="range" min="20" max="900" value="450" step="10" class="knob" id="motion-knob"></div>
+            <div class="control-label-group"><label for="motion-knob" class="control-label">Complexity</label><span class="readout" id="motion-readout">450 ms</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="texture-visual"></div><input type="range" min="0" max="1" value="0" step="0.01" class="knob" id="texture-knob"></div>
+            <div class="control-label-group"><label for="texture-knob" class="control-label">Rhythm</label><span class="readout" id="texture-readout">0.00</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="highRhythm-visual"></div><input type="range" min="0" max="1" value="0" step="0.01" class="knob" id="highRhythm-knob"></div>
+            <div class="control-label-group"><label for="highRhythm-knob" class="control-label">High Rhythm</label><span class="readout" id="highRhythm-readout">0.00</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="bell-visual"></div><input type="range" min="0" max="1" value="0" step="0.01" class="knob" id="bell-knob"></div>
+            <div class="control-label-group"><label for="bell-knob" class="control-label">Bell</label><span class="readout" id="bell-readout">0.00</span></div>
+        </div>
+        <div class="control-group">
+            <div class="knob-wrapper"><div class="knob-visual" id="flux-visual"></div><input type="range" min="0" max="1" value="0" step="0.01" class="knob" id="flux-knob"></div>
+            <div class="control-label-group"><label for="flux-knob" class="control-label">Pulsing</label><span class="readout" id="flux-readout">0.00</span></div>
+        </div>
+        <div class="wind-control-wrapper">
+            <label class="control-label">Wind (Freq / Vol)</label>
+            <div id="wind-pad-container"><div id="wind-pad"><div id="wind-puck"></div></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Quote and UI logic (unchanged)
+    const quotes = [
+        { quote: "One child, one teacher, one book, one pen can change the world.", author: "Malala Yousafzai", explanation: "This quote says that even small things can make a big difference. With simple tools for learning, like a book and a pen, and with one good teacher, a student can learn to do great things. Education gives people the power to help make the world a better place." },
+        { quote: "The classroom remains the most radical space of possibility in the academy.", author: "Bell Hooks", explanation: "This means a classroom is a very special place. It is not just for learning facts. It is a place for big, new ideas. In a classroom, students and teachers can talk about freedom and think about how to make the world better. It is a place where anything feels possible." },
+        { quote: "I am my language. Until I can take pride in my language, I cannot take pride in myself.", author: "Gloria Anzaldúa", explanation: "This quote connects your language to how you feel about yourself. Your language is a big part of who you are. If you feel good about the language you speak, you can also feel good about yourself. It is important to be proud of your words and your culture." },
+        { quote: "Language, any language, has a dual character: it is both a means of communication and a carrier of culture.", author: "Ngũgĩ wa Thiong’o", explanation: "Language does two important things. First, it helps us talk to each other. Second, it carries the history and ideas of a group of people. So, when you learn a language, you don’t just learn words. You also learn about the culture and stories of the people who speak it." },
+        { quote: "The highest education is that which does not merely give us information but makes our life in harmony with all existence.", author: "Rabindranath Tagore", explanation: "This quote says that the best education is not just about learning facts and information. A great education helps you feel connected to the world, to other people, and to nature. It helps you live a life that is peaceful and balanced with everything around you." },
+        { quote: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela", explanation: "This quote means that learning is the strongest tool we have to make positive changes. When people are educated, they can understand problems better and find new solutions. Education helps people stand up for what is right and build a better future for everyone." },
+        { quote: "Invest in the human soul. Who knows, it may be a diamond in the rough.", author: "Mary McLeod Bethune", explanation: "This quote asks us to believe in other people. A 'diamond in the rough' is something that looks simple but is very special inside. When we help people learn and grow, we might discover they have wonderful and surprising talents. It is always a good idea to support others." },
+        { quote: "Once you learn to read, you will be forever free.", author: "Frederick Douglass", explanation: "This quote means that reading gives you a special kind of freedom. When you can read, you can learn about new ideas and see the world in different ways. No one can take that knowledge away from you. Reading opens your mind and helps you think for yourself." },
+        { quote: "Education and work are the levers to uplift a people.", author: "W. E. B. Du Bois", explanation: "This quote says that learning and working are two very important things that help a whole community improve. Like a lever that can lift something heavy, good education and fair jobs can help a group of people become stronger and more successful together over time." },
+        { quote: "Every empire, however, tells itself and the world that it is unlike all the others, that its mission is not to plunder and control but to educate and liberate.", author: "Edward W. Said", explanation: "This quote is a warning. It says that powerful countries often say they are helping other places by teaching them. But sometimes, their real reason is to have more control. We should think carefully about the stories that powerful groups tell about their actions in the world." },
+        { quote: "The function of freedom is to free someone else.", author: "Toni Morrison", explanation: "This quote says that when you have freedom, you have a job to do. Your job is to help other people become free, too. Freedom is not just for you to enjoy by yourself. It is something you should use to help others who are not yet free." },
+        { quote: "Not everything that is faced can be changed, but nothing can be changed until it is faced.", author: "James Baldwin", explanation: "This quote tells us we must be brave and look at problems directly. We cannot fix a problem by ignoring it. Even if a problem is very hard to solve, the first step is always to face it. Change can only begin when we are honest about what is wrong." },
+        { quote: "I am no longer accepting the things I cannot change. I am changing the things I cannot accept.", author: "Angela Davis", explanation: "This is a strong statement about taking action. Instead of just accepting a bad situation, this person decides to work to change it. It means that if something is wrong or unfair, you have the power to try to make it different, even if it seems very difficult." },
+        { quote: "Without community, there is no liberation…but community must not mean a shedding of our differences.", author: "Audre Lorde", explanation: "This quote says that we need to work together with others to be truly free. But it also gives an important warning. A good community does not ask everyone to be the same. A strong group loves that each person is different. Our differences make the community better." },
+        { quote: "If the first woman God ever made was strong enough to turn the world upside down all alone, these women together ought to be able to turn it right back.", author: "Sojourner Truth", explanation: "This quote uses the story of Eve to show the power of women. It says if one woman had the power to cause a big change, imagine what many women working together can do. It is a call for women to join together to fix problems in the world." },
+        { quote: "Another world is not only possible, she is on her way. On a quiet day, I can hear her breathing.", author: "Arundhati Roy", explanation: "This is a hopeful and poetic quote. It means that a better, kinder world is not just a dream. It is something that is already starting to happen. If you listen carefully, you can feel this new world coming. It gives hope to people working for change." },
+        { quote: "If you are neutral in situations of injustice, you have chosen the side of the oppressor.", author: "Desmond Tutu", explanation: "This quote says that you cannot stay in the middle when something unfair is happening. If you do nothing and say nothing, you are helping the person or group that is being unfair. To support justice, you must choose a side and speak up for what is right." },
+        { quote: "Until the lions have their own historians, the history of the hunt will always glorify the hunter.", author: "Chinua Achebe", explanation: "This quote uses a story about lions and hunters to explain history. It means that the story of an event usually sounds best for the person who tells it. To get the true story, we need to hear from everyone, not just the people with the most power." },
+        { quote: "Do the best you can until you know better. Then, when you know better, do better.", author: "Maya Angelou", explanation: "This is kind advice for life. It means it’s okay to make mistakes when you are learning. Just try your best with what you know now. But, when you learn more and find a better way to do something, you should use that new knowledge to improve." }
+    ];
+    const settingsToggle = document.getElementById('settings-toggle');
+    const quoteView = document.getElementById('quote-view');
+    const quoteIcons = document.querySelectorAll('.quote-icon');
+    const quoteText = document.getElementById('quote-text');
+    const quoteAuthor = document.getElementById('quote-author');
+    const explanationView = document.getElementById('explanation-view');
+    const explanationText = document.getElementById('explanation-text');
+    const returnButton = document.getElementById('return-button');
+    const playButton = document.getElementById('play-button');
+    let currentQuoteIndex = 0;
+    let quoteInterval;
+    const NUM_ICONS = 4;
+    function displayQuote() { quoteIcons.forEach(icon => icon.classList.remove('active', 'visible')); const iconIndex = currentQuoteIndex % NUM_ICONS; const currentIcon = document.getElementById(`icon-${iconIndex}`); currentIcon.classList.add('active'); setTimeout(() => currentIcon.classList.add('visible'), 10); const { quote, author } = quotes[currentQuoteIndex]; quoteText.textContent = `“${quote}”`; quoteAuthor.textContent = `— ${author}`; quoteText.classList.add('visible'); quoteAuthor.classList.add('visible'); }
+    function nextQuote() { quoteText.classList.remove('visible'); quoteAuthor.classList.remove('visible'); const iconIndex = currentQuoteIndex % NUM_ICONS; document.getElementById(`icon-${iconIndex}`).classList.remove('visible'); setTimeout(() => { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length; displayQuote(); }, 1500); }
+    function startQuoteCycle() { displayQuote(); quoteInterval = setInterval(nextQuote, 15000); }
+    quoteView.addEventListener('click', (event) => { event.stopPropagation(); clearInterval(quoteInterval); explanationText.textContent = quotes[currentQuoteIndex].explanation; quoteView.classList.remove('is-visible'); quoteView.classList.add('is-hidden'); explanationView.classList.remove('is-hidden'); explanationView.classList.add('is-visible'); });
+    returnButton.addEventListener('click', () => { explanationView.classList.remove('is-visible'); explanationView.classList.add('is-hidden'); quoteView.classList.remove('is-hidden'); quoteView.classList.add('is-visible'); startQuoteCycle(); });
+    settingsToggle.addEventListener('click', () => { document.body.classList.toggle('controls-open'); });
+    
+    // --- AUDIO CODE OPTIMISATIONS ---
+
+    let synth;
+    let isPlaying = false;
+    let schedulerId = null;
+
+    const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+    
+    class AmbientSynth {
+        // FIX 1.3: Accept audio context options to enforce sample rate
+        constructor(options) { 
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)(options);
+            // FIX 2.4: Lower master gain to prevent clipping on mobile speakers
+            this.masterGain = this.audioContext.createGain(); 
+            this.masterGain.gain.value = 0.3; 
+            this.masterGain.connect(this.audioContext.destination);
+
+            this.padBus = this.audioContext.createGain(); this.arpBus = this.audioContext.createGain(); this.bassBus = this.audioContext.createGain(); this.percBus = this.audioContext.createGain(); this.highRhythmBus = this.audioContext.createGain(); this.bellBus = this.audioContext.createGain(); this.windBus = this.audioContext.createGain(); this.reverb = this.audioContext.createConvolver(); this.initReverb(); this.padDelayL = this.audioContext.createDelay(2.0); this.padDelayR = this.audioContext.createDelay(2.0); this.padDelayFeedback = this.audioContext.createGain(); const padDelayMerger = this.audioContext.createChannelMerger(2); this.padBus.connect(this.masterGain); this.arpBus.connect(this.masterGain); this.bassBus.connect(this.masterGain); this.percBus.connect(this.masterGain); this.highRhythmBus.connect(this.masterGain); this.bellBus.connect(this.masterGain); this.windBus.connect(this.masterGain); this.padBus.connect(this.reverb); this.arpBus.connect(this.reverb); this.percBus.connect(this.reverb); this.highRhythmBus.connect(this.reverb); this.bellBus.connect(this.reverb); this.windBus.connect(this.reverb); this.padBus.connect(this.padDelayL); this.padBus.connect(this.padDelayR); this.padDelayL.delayTime.value = 0.9; this.padDelayR.delayTime.value = 1.2; this.padDelayL.connect(this.padDelayFeedback); this.padDelayR.connect(this.padDelayFeedback); this.padDelayFeedback.connect(this.padDelayL); this.padDelayFeedback.connect(this.padDelayR); this.padDelayL.connect(padDelayMerger, 0, 0); this.padDelayR.connect(padDelayMerger, 0, 1); padDelayMerger.connect(this.masterGain); this.reverb.connect(this.masterGain); this.windNoiseSource = null; this.windFilter = this.audioContext.createBiquadFilter(); this.windGain = this.audioContext.createGain(); this.windFilter.type = 'bandpass'; this.windFilter.frequency.value = 100; this.windFilter.Q.value = 2; this.windGain.gain.value = 0; this.windFilter.connect(this.windGain); this.windGain.connect(this.windBus); this.windFreqLFO = this.audioContext.createOscillator(); this.windVolLFO = this.audioContext.createOscillator(); this.windFreqLFO.type = 'sine'; this.windVolLFO.type = 'sine'; this.windFreqLFO.frequency.value = 0.8; this.windVolLFO.frequency.value = 1.0; this.windFreqLFOgain = this.audioContext.createGain(); this.windVolLFOgain = this.audioContext.createGain(); this.windFreqLFOgain.gain.value = 0; this.windVolLFOgain.gain.value = 0; this.windFreqLFO.connect(this.windFreqLFOgain); this.windVolLFO.connect(this.windVolLFOgain); this.windFreqLFOgain.connect(this.windFilter.frequency); this.windVolLFOgain.connect(this.windGain.gain);
+            // Use performance.now() for high-precision timing, but driven by rAF
+            this.lookahead = 0.1;
+            this.nextChordTime = 0; this.nextArpTime = 0; this.nextPercTime = 0; this.nextBellTime = 3;
+            this.chordDuration = 8.0; this.chordCrossfade = 1.0; this.currentChordIndex = 0; this.currentArpStep = 0; this.padLayers = [this.audioContext.createGain(), this.audioContext.createGain()]; this.padLayers.forEach(layer => layer.connect(this.padBus)); this.padLayers[1].gain.value = 0; this.bassLayers = [this.audioContext.createGain(), this.audioContext.createGain()]; this.bassLayers.forEach(layer => layer.connect(this.bassBus)); this.bassLayers[1].gain.value = 0; this.activeLayer = 0; this.CHORDS = [ { name: 'Cmaj7', notes: [60, 64, 67, 71] }, { name: 'Gmaj7', notes: [55, 59, 62, 66] }, { name: 'Dmaj7', notes: [62, 66, 69, 73] }, { name: 'Amaj7', notes: [57, 61, 64, 68] }, { name: 'Emaj7', notes: [64, 68, 71, 75] }, { name: 'Bmaj7', notes: [59, 63, 66, 70] }, { name: 'F#maj7', notes: [66, 70, 73, 77] }, { name: 'C#maj7', notes: [61, 65, 68, 72] }, { name: 'G#maj7', notes: [56, 60, 63, 67] }, { name: 'D#maj7', notes: [63, 67, 70, 74] }, { name: 'A#maj7', notes: [58, 62, 65, 69] }, { name: 'Fmaj7', notes: [65, 69, 72, 76] }, ]; this.settings = { richness: 6, chorus: 6.0, space: 0.7, depth: 0.3, movement: 1.0, motion: 450, texture: 0.0, highRhythm: 0.0, bell: 0.0, flux: 0.0 };
+        }
+        startWind() { if (this.windNoiseSource) return; this.windNoiseSource = this.audioContext.createBufferSource(); const bufferSize = this.audioContext.sampleRate * 5; const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; } this.windNoiseSource.buffer = buffer; this.windNoiseSource.loop = true; this.windNoiseSource.connect(this.windFilter); this.windNoiseSource.start(0); this.windFreqLFO.start(0); this.windVolLFO.start(0); }
+        updateWind(x, y) { const minFreq = 40; const maxFreq = 2000; const maxVol = 0.70; const freq = minFreq * Math.pow(maxFreq / minFreq, x); const vol = y * maxVol; const now = this.audioContext.currentTime; this.windFilter.frequency.setTargetAtTime(freq, now, 0.05); this.windGain.gain.setTargetAtTime(vol, now, 0.05); }
+        initReverb() { const sr = this.audioContext.sampleRate; const length = sr * 8; const impulse = this.audioContext.createBuffer(2, length, sr); for (const channel of [0, 1]) { const buffer = impulse.getChannelData(channel); for (let i = 0; i < length; i++) { buffer[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3); } } this.reverb.buffer = impulse; }
+        scheduler() { const now = this.audioContext.currentTime; if (this.nextChordTime === 0) { this.nextChordTime = now; this.nextArpTime = now; this.nextPercTime = now; } const scheduleUntil = now + this.lookahead; while (this.nextChordTime < scheduleUntil) { this.playChord(this.nextChordTime); this.nextChordTime += this.chordDuration; } const arpInterval = 1.0 / this.settings.movement; while(this.nextArpTime < scheduleUntil) { const chordForArp = this.CHORDS[Math.floor(this.nextArpTime / this.chordDuration) % this.CHORDS.length]; const noteMidi = chordForArp.notes[this.currentArpStep % chordForArp.notes.length]; const arpTime = this.nextArpTime; this.playArpNote(noteMidi, arpTime); if (this.settings.highRhythm > 0.01 && this.currentArpStep % 2 === 0) { this.createHighRhythmHit(arpTime); } this.nextArpTime += arpInterval; this.currentArpStep++; } const percInterval = 0.1; while(this.nextPercTime < scheduleUntil) { if (Math.random() < this.settings.texture) this.createPercPluck(this.nextPercTime); this.nextPercTime += percInterval + (Math.random() * 0.05); } const bellInterval = 3 + (Math.random() * 2); while(this.nextBellTime < scheduleUntil) { if (this.settings.bell > 0.01) { const chordForBell = this.CHORDS[Math.floor(this.nextBellTime / this.chordDuration) % this.CHORDS.length]; const noteMidi = chordForBell.notes[2 + Math.floor(Math.random() * 2)]; this.createBellVoice(noteMidi, this.nextBellTime); } this.nextBellTime += bellInterval; } }
+        createBellVoice(midiNote, time) { const bellDur = 8.0; const carrierFreq = midiToFreq(midiNote + 24); const modulatorFreq = carrierFreq * 1.414; const carrier = this.audioContext.createOscillator(); carrier.type = 'sine'; carrier.frequency.value = carrierFreq; const modulator = this.audioContext.createOscillator(); modulator.type = 'sine'; modulator.frequency.value = modulatorFreq; const modDepth = this.audioContext.createGain(); modDepth.gain.setValueAtTime(0, time); modDepth.gain.linearRampToValueAtTime(carrierFreq * 2, time + 0.005); modDepth.gain.exponentialRampToValueAtTime(0.01, time + 0.5); const ampEnv = this.audioContext.createGain(); ampEnv.gain.setValueAtTime(0, time); ampEnv.gain.linearRampToValueAtTime(this.settings.bell * 0.5, time + 0.01); ampEnv.gain.exponentialRampToValueAtTime(0.0001, time + bellDur); const panner = this.audioContext.createStereoPanner(); panner.pan.value = (Math.random() - 0.5) * 1.6; modulator.connect(modDepth); modDepth.connect(carrier.frequency); carrier.connect(ampEnv); ampEnv.connect(panner); panner.connect(this.bellBus); modulator.start(time); carrier.start(time); modulator.stop(time + bellDur); carrier.stop(time + bellDur); }
+        createPercPluck(time) { const noiseDur = 0.15; const noiseBufferSize = this.audioContext.sampleRate * noiseDur; const buffer = this.audioContext.createBuffer(1, noiseBufferSize, this.audioContext.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < noiseBufferSize; i++) { data[i] = Math.random() * 2 - 1; } const noiseSource = this.audioContext.createBufferSource(); noiseSource.buffer = buffer; const filter = this.audioContext.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 4500; filter.Q.value = 20; const envelope = this.audioContext.createGain(); envelope.gain.setValueAtTime(0, time); envelope.gain.linearRampToValueAtTime(0.3 * this.settings.texture, time + 0.005); envelope.gain.exponentialRampToValueAtTime(0.0001, time + noiseDur); const panner = this.audioContext.createStereoPanner(); panner.pan.value = (Math.random() - 0.5) * 1.8; noiseSource.connect(filter); filter.connect(envelope); envelope.connect(panner); panner.connect(this.percBus); noiseSource.start(time); noiseSource.stop(time + noiseDur); }
+        createHighRhythmHit(time) { const blipDur = 0.06; const noiseSource = this.audioContext.createBufferSource(); const bufferSize = this.audioContext.sampleRate * blipDur; const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; } noiseSource.buffer = buffer; const filter = this.audioContext.createBiquadFilter(); filter.type = 'bandpass'; const baseFreq = 4000; const freqVariation = 1000; filter.frequency.value = baseFreq + (Math.random() - 0.5) * freqVariation; const baseQ = 15; const qVariation = 5; filter.Q.value = baseQ + (Math.random() - 0.5) * qVariation; const envelope = this.audioContext.createGain(); envelope.gain.setValueAtTime(0, time); envelope.gain.linearRampToValueAtTime(1.5 * this.settings.highRhythm, time + 0.005); envelope.gain.exponentialRampToValueAtTime(0.0001, time + blipDur); const panner = this.audioContext.createStereoPanner(); panner.pan.value = (Math.random() - 0.5) * 1.8; noiseSource.connect(filter); filter.connect(envelope); const noteBus = this.audioContext.createGain(); const delay = this.audioContext.createDelay(1.0); const feedback = this.audioContext.createGain(); delay.delayTime.value = this.settings.motion / 1000.0; const minMovement = 0.3; const maxMovement = 3.0; const normalizedMovement = (this.settings.movement - minMovement) / (maxMovement - minMovement); const feedbackValue = 0.7 - (normalizedMovement * 0.6); feedback.gain.value = feedbackValue; envelope.connect(panner); panner.connect(noteBus); panner.connect(delay); delay.connect(feedback); feedback.connect(delay); feedback.connect(noteBus); noteBus.connect(this.highRhythmBus); noiseSource.start(time); noiseSource.stop(time + blipDur); }
+        playChord(time) { const chord = this.CHORDS[this.currentChordIndex]; const oldLayer = this.activeLayer; const newLayer = 1 - this.activeLayer; this.padLayers[oldLayer].gain.linearRampToValueAtTime(0, time + this.chordCrossfade); this.padLayers[newLayer].gain.cancelScheduledValues(time); this.padLayers[newLayer].gain.setValueAtTime(0, time); this.padLayers[newLayer].gain.linearRampToValueAtTime(1, time + this.chordCrossfade); chord.notes.forEach(midiNote => { this.createPadVoice(midiNote, time, this.padLayers[newLayer]); }); this.bassLayers[oldLayer].gain.linearRampToValueAtTime(0, time + this.chordCrossfade); this.bassLayers[newLayer].gain.cancelScheduledValues(time); this.bassLayers[newLayer].gain.setValueAtTime(0, time); this.bassLayers[newLayer].gain.linearRampToValueAtTime(1, time + this.chordCrossfade); this.createBassVoice(chord.notes[0], time, this.bassLayers[newLayer]); this.activeLayer = newLayer; this.currentChordIndex = (this.currentChordIndex + 1) % this.CHORDS.length; }
+        createPadVoice(midiNote, time, destination) { const freq = midiToFreq(midiNote); const filter = this.audioContext.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 3000; filter.Q.value = 0.7; filter.connect(destination); const filterLFO = this.audioContext.createOscillator(); const filterLFOGain = this.audioContext.createGain(); filterLFO.frequency.value = 0.03; filterLFOGain.gain.value = 300; filterLFO.connect(filterLFOGain); filterLFOGain.connect(filter.frequency); filterLFO.start(time); filterLFO.stop(time + this.chordDuration); const baseGain = 0.4 / this.settings.richness; for (let i = 0; i < this.settings.richness; i++) { const osc = this.audioContext.createOscillator(); const triOsc = this.audioContext.createOscillator(); const sawOsc = this.audioContext.createOscillator(); const detuneSpread = ((i / (this.settings.richness - 1 || 1)) - 0.5) * 2 * 6; const randomChorus = (Math.random() - 0.5) * 2 * this.settings.chorus; const totalDetune = detuneSpread + randomChorus; osc.type = 'sine'; triOsc.type = 'triangle'; sawOsc.type = 'sawtooth'; [osc, triOsc, sawOsc].forEach(o => { o.frequency.value = freq; o.detune.value = totalDetune; o.start(time); o.stop(time + this.chordDuration); }); const voiceGain = this.audioContext.createGain(); voiceGain.gain.value = baseGain; const triGain = this.audioContext.createGain(); triGain.gain.value = 0.4; const sawGain = this.audioContext.createGain(); sawGain.gain.value = 0.05; osc.connect(voiceGain); triOsc.connect(triGain); triGain.connect(voiceGain); sawOsc.connect(sawGain); sawGain.connect(voiceGain); voiceGain.connect(filter); } }
+        createBassVoice(rootMidi, time, destination) { const freq = midiToFreq(rootMidi - 24); const osc = this.audioContext.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq; osc.connect(destination); osc.start(time); osc.stop(time + this.chordDuration); }
+        playArpNote(midiNote, time) { const freq = midiToFreq(midiNote + 12); const envelope = this.audioContext.createGain(); envelope.gain.setValueAtTime(0, time); envelope.gain.linearRampToValueAtTime(0.8, time + 0.005); envelope.gain.exponentialRampToValueAtTime(0.0001, time + 1.2); const osc = this.audioContext.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq; osc.connect(envelope); osc.start(time); osc.stop(time + 1.2); const delay = this.audioContext.createDelay(1.0); const feedback = this.audioContext.createGain(); const panner = this.audioContext.createStereoPanner(); const noteBus = this.audioContext.createGain(); delay.delayTime.value = this.settings.motion / 1000.0; feedback.gain.value = 0.5; panner.pan.value = (Math.random() - 0.5) * 1.8; envelope.connect(noteBus); envelope.connect(delay); delay.connect(feedback); feedback.connect(delay); feedback.connect(noteBus); noteBus.connect(panner); panner.connect(this.arpBus); }
+        updateControl(param, value) { const rampTime = 0.1; const now = this.audioContext.currentTime; switch (param) { case 'richness': this.settings.richness = parseInt(value, 10); break; case 'chorus': this.settings.chorus = parseFloat(value); break; case 'space': this.settings.space = parseFloat(value); this.padDelayFeedback.gain.linearRampToValueAtTime(this.settings.space, now + rampTime); break; case 'depth': this.settings.depth = parseFloat(value); this.bassBus.gain.linearRampToValueAtTime(this.settings.depth, now + rampTime); break; case 'movement': const min = Math.log(0.3); const max = Math.log(3.0); const scale = (max - min) / 1.0; this.settings.movement = Math.exp(min + scale * parseFloat(value)); break; case 'motion': this.settings.motion = parseInt(value, 10); break; case 'texture': this.settings.texture = parseFloat(value); break; case 'highRhythm': this.settings.highRhythm = parseFloat(value); this.highRhythmBus.gain.linearRampToValueAtTime(this.settings.highRhythm, now + rampTime); break; case 'bell': this.settings.bell = parseFloat(value); break; case 'flux': this.settings.flux = parseFloat(value); this.windFreqLFOgain.gain.linearRampToValueAtTime(this.settings.flux * 100, now + rampTime); this.windVolLFOgain.gain.linearRampToValueAtTime(this.settings.flux * 0.30, now + rampTime); break; } }
+    }
+    
+    // FIX 2.1: Throttle oscillator count on low-memory devices.
+    const richnessKnob = document.getElementById('richness-knob');
+    if (navigator.deviceMemory && navigator.deviceMemory < 4) {
+        richnessKnob.max = '6';
+        if (parseInt(richnessKnob.value) > 6) {
+            richnessKnob.value = '6';
+        }
+    }
+
+    // FIX 2.3: Use requestAnimationFrame for a jitter-proof scheduler loop
+    function schedulerLoop() {
+        if (!isPlaying) return;
+        synth.scheduler();
+        schedulerId = requestAnimationFrame(schedulerLoop);
+    }
+
+    // FIX 1.1: Use `click` event, which is a trusted gesture on all mobile browsers.
+    playButton.addEventListener('click', async () => {
+        if (!synth) {
+            try {
+                // FIX 1.3: Pass explicit sampleRate to avoid issues on some Android devices.
+                synth = new AmbientSynth({ sampleRate: 44100 });
+                controls.forEach(c => { 
+                    const knob = document.getElementById(`${c.id}-knob`); 
+                    synth.updateControl(c.id, knob.value); 
+                });
+                
+                // FIX 1.2: Always call resume() after creation, it's safe even if already running.
+                await synth.audioContext.resume();
+                
+                synth.startWind();
+                playButton.textContent = 'Pause';
+                isPlaying = true;
+                schedulerLoop();
+            } catch (e) { 
+                console.error("Could not start AudioContext:", e); 
+                playButton.textContent = "Audio Error"; 
+            }
+        } else {
+            if (synth.audioContext.state === 'running') {
+                await synth.audioContext.suspend(); 
+                playButton.textContent = 'Play';
+                isPlaying = false;
+                cancelAnimationFrame(schedulerId);
+            } else if (synth.audioContext.state === 'suspended') {
+                await synth.audioContext.resume(); 
+                playButton.textContent = 'Pause';
+                isPlaying = true;
+                schedulerLoop();
+            }
+        }
+    });
+
+    const controls = [ { id: 'richness', unit: '', formatter: (v) => v }, { id: 'chorus', unit: ' cent', formatter: (v) => parseFloat(v).toFixed(1) }, { id: 'space', unit: '', formatter: (v) => parseFloat(v).toFixed(2) }, { id: 'depth', unit: '', formatter: (v) => parseFloat(v).toFixed(2) }, { id: 'movement', unit: ' Hz', formatter: (v) => { const min = Math.log(0.3); const max = Math.log(3.0); const scale = (max - min) / 1.0; return Math.exp(min + scale * parseFloat(v)).toFixed(2); }}, { id: 'motion', unit: ' ms', formatter: (v) => v }, { id: 'texture', unit: '', formatter: (v) => parseFloat(v).toFixed(2) }, { id: 'highRhythm', unit: '', formatter: (v) => parseFloat(v).toFixed(2) }, { id: 'bell', unit: '', formatter: (v) => parseFloat(v).toFixed(2) }, { id: 'flux', unit: '', formatter: (v) => parseFloat(v).toFixed(2) } ];
+    controls.forEach(c => { const knob = document.getElementById(`${c.id}-knob`); const readout = document.getElementById(`${c.id}-readout`); const visual = document.getElementById(`${c.id}-visual`); function updateKnobVisual(el) { const value = parseFloat(el.value); const min = parseFloat(el.min); const max = parseFloat(el.max); const percent = (value - min) / (max - min); const rotation = -135 + percent * 270; visual.style.setProperty('--rotation', `${rotation}deg`); } knob.addEventListener('input', (e) => { const value = e.target.value; readout.textContent = `${c.formatter(value)}${c.unit}`; updateKnobVisual(e.target); if (synth) synth.updateControl(c.id, value); }); updateKnobVisual(knob); readout.textContent = `${c.formatter(knob.value)}${c.unit}`; });
+    
+    const windPad = document.getElementById('wind-pad'); const windPuck = document.getElementById('wind-puck');
+    let isDraggingWindPad = false;
+    function handleWindMove(event) { if (!synth || !isDraggingWindPad) return; event.preventDefault(); const rect = windPad.getBoundingClientRect(); const clientX = event.touches ? event.touches[0].clientX : event.clientX; const clientY = event.touches ? event.touches[0].clientY : event.clientY; let x = clientX - rect.left; let y = clientY - rect.top; x = Math.max(0, Math.min(rect.width, x)); y = Math.max(0, Math.min(rect.height, y)); const normalizedX = x / rect.width; const normalizedY = 1 - (y / rect.height); windPuck.style.left = `${x}px`; windPuck.style.top = `${y}px`; synth.updateWind(normalizedX, normalizedY); }
+    function startDrag(e) { isDraggingWindPad = true; windPad.setPointerCapture(e.pointerId); handleWindMove(e); }
+    function stopDrag(e) { isDraggingWindPad = false; if(e.pointerId) windPad.releasePointerCapture(e.pointerId); }
+    windPad.addEventListener('pointerdown', startDrag); windPad.addEventListener('pointermove', handleWindMove);
+    windPad.addEventListener('pointerup', stopDrag);
+    // FIX 3.4: Handle `pointercancel` to gracefully end the drag if the browser interrupts it.
+    windPad.addEventListener('pointercancel', stopDrag);
+
+    document.querySelectorAll('.knob').forEach(knob => { knob.addEventListener('keydown', (e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); knob.value = Math.min(parseFloat(knob.max), parseFloat(knob.value) + parseFloat(knob.step)); knob.dispatchEvent(new Event('input', { bubbles: true })); } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); knob.value = Math.max(parseFloat(knob.min), parseFloat(knob.value) - parseFloat(knob.step)); knob.dispatchEvent(new Event('input', { bubbles: true })); } }); });
+    startQuoteCycle();
+});
+</script>
+</body>
+</html>
+
+```
