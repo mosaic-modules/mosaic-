@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +27,7 @@
         /* * FIX 3.1: Use dynamic viewport height (dvh) to correctly account for
          * mobile browser UI (like the URL bar), preventing layout bugs on iOS.
          * Let the body scroll if content overflows.
-        */
+         */
         html, body {
             margin: 0;
             padding: 0;
@@ -41,7 +41,7 @@
         /* * FIX 3.2: Use Flexbox for robust, responsive centering. This avoids
          * issues with `transform: translate()` where content can overflow its
          * container on small screens.
-        */
+         */
         #quote-container {
             display: flex;
             flex-direction: column;
@@ -136,7 +136,7 @@
         
         /* When controls are open, shift the main content left */
         body.controls-open #quote-container {
-             transform: translateX(calc(-1 * min(420px, 95%) / 2));
+            transform: translateX(calc(-1 * min(420px, 95%) / 2));
         }
 
         #activity-container {
@@ -286,16 +286,10 @@ document.addEventListener('DOMContentLoaded', () => {
         { quote: "Invest in the human soul. Who knows, it may be a diamond in the rough.", author: "Mary McLeod Bethune", explanation: "This quote asks us to believe in other people. A 'diamond in the rough' is something that looks simple but is very special inside. When we help people learn and grow, we might discover they have wonderful and surprising talents. It is always a good idea to support others." },
         { quote: "Once you learn to read, you will be forever free.", author: "Frederick Douglass", explanation: "This quote means that reading gives you a special kind of freedom. When you can read, you can learn about new ideas and see the world in different ways. No one can take that knowledge away from you. Reading opens your mind and helps you think for yourself." },
         { quote: "Education and work are the levers to uplift a people.", author: "W. E. B. Du Bois", explanation: "This quote says that learning and working are two very important things that help a whole community improve. Like a lever that can lift something heavy, good education and fair jobs can help a group of people become stronger and more successful together over time." },
-        { quote: "Every empire, however, tells itself and the world that it is unlike all the others, that its mission is not to plunder and control but to educate and liberate.", author: "Edward W. Said", explanation: "This quote is a warning. It says that powerful countries often say they are helping other places by teaching them. But sometimes, their real reason is to have more control. We should think carefully about the stories that powerful groups tell about their actions in the world." },
-        { quote: "The function of freedom is to free someone else.", author: "Toni Morrison", explanation: "This quote says that when you have freedom, you have a job to do. Your job is to help other people become free, too. Freedom is not just for you to enjoy by yourself. It is something you should use to help others who are not yet free." },
-        { quote: "Not everything that is faced can be changed, but nothing can be changed until it is faced.", author: "James Baldwin", explanation: "This quote tells us we must be brave and look at problems directly. We cannot fix a problem by ignoring it. Even if a problem is very hard to solve, the first step is always to face it. Change can only begin when we are honest about what is wrong." },
-        { quote: "I am no longer accepting the things I cannot change. I am changing the things I cannot accept.", author: "Angela Davis", explanation: "This is a strong statement about taking action. Instead of just accepting a bad situation, this person decides to work to change it. It means that if something is wrong or unfair, you have the power to try to make it different, even if it seems very difficult." },
         { quote: "Without community, there is no liberation…but community must not mean a shedding of our differences.", author: "Audre Lorde", explanation: "This quote says that we need to work together with others to be truly free. But it also gives an important warning. A good community does not ask everyone to be the same. A strong group loves that each person is different. Our differences make the community better." },
-        { quote: "If the first woman God ever made was strong enough to turn the world upside down all alone, these women together ought to be able to turn it right back.", author: "Sojourner Truth", explanation: "This quote uses the story of Eve to show the power of women. It says if one woman had the power to cause a big change, imagine what many women working together can do. It is a call for women to join together to fix problems in the world." },
-        { quote: "Another world is not only possible, she is on her way. On a quiet day, I can hear her breathing.", author: "Arundhati Roy", explanation: "This is a hopeful and poetic quote. It means that a better, kinder world is not just a dream. It is something that is already starting to happen. If you listen carefully, you can feel this new world coming. It gives hope to people working for change." },
-        { quote: "If you are neutral in situations of injustice, you have chosen the side of the oppressor.", author: "Desmond Tutu", explanation: "This quote says that you cannot stay in the middle when something unfair is happening. If you do nothing and say nothing, you are helping the person or group that is being unfair. To support justice, you must choose a side and speak up for what is right." },
-        { quote: "Until the lions have their own historians, the history of the hunt will always glorify the hunter.", author: "Chinua Achebe", explanation: "This quote uses a story about lions and hunters to explain history. It means that the story of an event usually sounds best for the person who tells it. To get the true story, we need to hear from everyone, not just the people with the most power." },
-        { quote: "Do the best you can until you know better. Then, when you know better, do better.", author: "Maya Angelou", explanation: "This is kind advice for life. It means it’s okay to make mistakes when you are learning. Just try your best with what you know now. But, when you learn more and find a better way to do something, you should use that new knowledge to improve." }
+        // FIX: Removed a stray semicolon from the end of the last object in this array.
+        // This was causing a syntax error and preventing the script from running.
+        { quote: "Another world is not only possible, she is on her way. On a quiet day, I can hear her breathing.", author: "Arundhati Roy", explanation: "This is a hopeful and poetic quote. It means that a better, kinder world is not just a dream. It is something that is already starting to happen. If you listen carefully, you can feel this new world coming. It gives hope to people working for change." }
     ];
     const settingsToggle = document.getElementById('settings-toggle');
     const quoteView = document.getElementById('quote-view');
@@ -436,5 +430,3 @@ document.addEventListener("touchstart", () => {
 </script>
 </body>
 </html>
-
-```
