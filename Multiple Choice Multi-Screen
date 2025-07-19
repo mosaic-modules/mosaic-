@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Activity: Cognitive Load Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Questrial&family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-sage: #7A8471;
+      --secondary-sage: #9CAF88;
+      --tertiary-sage: #B8C5A6;
+      --warm-cream: #F8F6F0;
+      --soft-white: #FEFCF7;
+      --clay-brown: #A0826D;
+      --forest-shadow: #5A6B52;
+      --success-green: #2E7D32;
+      --error-red: #C62828;
+      --border-sage: rgba(122, 132, 113, 0.2);
+      --hover-sage: rgba(156, 175, 136, 0.15);
+      --font-display: 'Questrial', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+      --font-serif: 'Lora', serif;
+      --feedback-width-desktop: 420px;
+    }
+
+    html, body {
+      margin: 0; padding: 0; width: 100%; min-height: 100vh;
+      font-family: var(--font-body); 
+      background: var(--warm-cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body.feedback-open { overflow: hidden; }
+
+    #app-wrapper {
+        display: flex; justify-content: center; align-items: flex-start;
+        padding: 2rem; box-sizing: border-box; width: 100%; min-height: 100vh;
+    }
+
+    #activity-container {
+      width: 100%; max-width: 800px; background: var(--soft-white);
+      padding: 48px; border-radius: 20px; border: 1px solid rgba(122, 132, 113, 0.12);
+      box-shadow: 0 15px 45px rgba(90, 107, 82, 0.12);
+      box-sizing: border-box; transition: margin-right 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      display: flex; flex-direction: column;
+    }
+    
+    h1 {
+      font-family: var(--font-display); font-size: 2.5rem; text-align: center;
+      color: var(--forest-shadow); margin: 0 0 8px 0;
+    }
+
+    h2.rubric {
+        font-family: var(--font-body); font-size: 1.1rem; font-weight: 400;
+        text-align: center; color: var(--secondary-sage); margin: 0 auto 32px auto;
+        max-width: 600px; line-height: 1.6;
+    }
+    
+    .mc-questions-container { position: relative; min-height: 450px; }
+
+    .mc-question {
+        opacity: 0; visibility: hidden; position: absolute;
+        top: 0; left: 0; width: 100%;
+        transition: opacity 0.4s ease-in-out, visibility 0.4s;
+    }
+    .mc-question.active { opacity: 1; visibility: visible; position: relative; }
+    
+    .mc-question-header { margin-bottom: 24px; }
+    
+    .mc-question-text {
+        font-family: var(--font-serif); font-weight: 400; font-size: 1.3rem;
+        color: var(--forest-shadow); line-height: 1.7; text-align: center;
+        background-color: #fdfdfc; padding: 24px; border-radius: 12px;
+        border: 1px solid var(--border-sage); box-shadow: 0 4px 12px rgba(90, 107, 82, 0.08);
+    }
+    
+    .mc-options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    
+    .mc-option-label {
+        display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px;
+        border: 1px solid var(--border-sage); border-radius: 12px;
+        transition: background-color 0.3s, border-color 0.3s, transform 0.2s, opacity 0.4s ease-out;
+        -webkit-tap-highlight-color: transparent;
+    }
+     .mc-option-label:not(.correct-answer):not(.fade-out):hover {
+        background-color: var(--hover-sage); border-color: var(--secondary-sage); transform: translateY(-2px);
+     }
+    .mc-option-item input { display: none; }
+    .mc-option-label.correct-answer { border-color: var(--success-green); background-color: #e8f5e9; cursor: default; }
+    
+    .mc-option-label.fade-out { opacity: 0; pointer-events: none; }
+    .mc-option-item input[disabled] + .option-control + .mc-option-text { color: var(--secondary-sage); }
+    
+    .option-control {
+        flex-shrink: 0; width: 22px; height: 22px; border: 2px solid var(--tertiary-sage);
+        background-color: var(--soft-white); transition: all 0.2s ease;
+        position: relative; border-radius: 50%;
+    }
+    .mc-option-item input:checked + .option-control { border-color: var(--primary-sage); }
+    .mc-option-item input:checked + .option-control::after {
+        content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 12px; height: 12px; border-radius: 50%; background-color: var(--primary-sage);
+    }
+    .mc-option-text { color: var(--primary-sage); line-height: 1.4; font-weight: 600; font-size: 0.95rem; }
+    
+    .explanation-container {
+        overflow: hidden; max-height: 0; opacity: 0;
+        transition: max-height 0.5s ease-out, opacity 0.5s ease-out, margin-top 0.5s ease-out;
+        margin-top: 0;
+    }
+    .explanation-container.visible { max-height: 200px; opacity: 1; margin-top: 20px; }
+    .explanation-text {
+        padding: 16px; background-color: #fdfdfc; border-radius: 8px;
+        border: 1px solid var(--border-sage); border-left: 3px solid var(--secondary-sage);
+        font-size: 0.95rem; line-height: 1.6; color: var(--primary-sage);
+    }
+
+    .activity-footer { margin-top: auto; padding-top: 24px; }
+    #slide-feedback { height: 24px; font-weight: 600; text-align: center; margin-bottom: 16px; transition: color 0.3s; }
+    #slide-feedback.correct { color: var(--success-green); }
+    #slide-feedback.incorrect { color: var(--error-red); }
+
+    .progress-tracker { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .progress-dot { width: 12px; height: 12px; background-color: var(--border-sage); border-radius: 50%; transition: background-color 0.3s; }
+    .progress-dot.completed { background-color: var(--secondary-sage); }
+    .progress-dot.active { background-color: var(--primary-sage); }
+    
+    .slide-navigation { display: flex; justify-content: center; align-items: center; }
+    
+    .activity-btn {
+        padding: 14px 32px; border-radius: 12px; border: 1px solid var(--primary-sage);
+        background-color: var(--primary-sage); color: white; font-weight: 600; cursor: pointer;
+        transition: all 0.2s; -webkit-tap-highlight-color: transparent; min-width: 180px;
+    }
+    .activity-btn:hover { background-color: var(--forest-shadow); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .activity-btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    
+    #feedback-sidebar {
+        position: fixed; top: 0; right: 0; width: 100%; height: 100%;
+        background: var(--warm-cream); border-left: 1px solid var(--border-sage);
+        box-shadow: -8px 0 32px rgba(90, 107, 82, 0.1); z-index: 1000;
+        transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        display: flex; flex-direction: column; box-sizing: border-box;
+    }
+    @media (min-width: 1024px) { #app-wrapper.feedback-visible #activity-container { margin-right: var(--feedback-width-desktop); } #feedback-sidebar { width: var(--feedback-width-desktop); height: 100vh; } }
+    #app-wrapper.feedback-visible #feedback-sidebar { transform: translateX(0); }
+    .feedback-header { padding: 24px; border-bottom: 1px solid var(--border-sage); }
+    .feedback-header h3 { font-family: var(--font-display); font-size: 1.8rem; color: var(--forest-shadow); margin: 0 0 8px 0; }
+    #feedback-score { font-size: 1.1rem; font-weight: 600; color: var(--primary-sage); }
+    #feedback-details { flex-grow: 1; overflow-y: auto; padding: 24px; }
+    .feedback-item { background: var(--soft-white); border: 1px solid var(--border-sage); border-left-width: 4px; border-radius: 8px; padding: 16px; border-left-color: #558B2F; }
+    .feedback-item h4 { margin: 0 0 12px 0; font-size: 1.2em; color: var(--forest-shadow); }
+    .feedback-item p { margin: 0; font-size: 1rem; line-height: 1.6; color: var(--primary-sage); }
+    .feedback-footer { padding: 24px; border-top: 1px solid var(--border-sage); text-align: center; background: var(--warm-cream); }
+    
+    @media (max-width: 767px) {
+        #app-wrapper { padding: 1rem; }
+        #activity-container { padding: 24px; }
+        h1 { font-size: 2rem; } h2.rubric { font-size: 1rem; }
+        .mc-question-text { font-size: 1.15rem; }
+        .mc-options-container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="app-wrapper">
+    <main id="activity-container">
+      <header>
+          <h1>Cognitive Load Analysis</h1>
+          <h2 class="rubric">Match each presentation text with the correct problem description.</h2>
+      </header>
+      
+      <div class="mc-questions-container"></div>
+
+      <footer class="activity-footer">
+        <div id="slide-feedback"></div>
+        <div class="progress-tracker"></div>
+        <div class="slide-navigation">
+          <button id="submit-btn" class="activity-btn">Check Answer</button>
+        </div>
+      </footer>
+    </main>
+    
+    <aside id="feedback-sidebar">
+        <div class="feedback-header">
+            <h3>Activity Complete!</h3>
+            <p id="feedback-score"></p>
+        </div>
+        <div id="feedback-details"></div>
+        <div class="feedback-footer">
+            <button id="feedback-close-btn" class="activity-btn secondary">Try Again</button>
+        </div>
+    </aside>
+  </div>
+
+<script>
+const questionsData = [
+    { text: "Next week, I will go to a concert. I bought the ticket last month. My friend told me about it yesterday. Right now, I am feeling very excited. After the concert, I will be very tired. I hope it is good.", correct: "Jumps in Time", explanation: "This text creates extraneous load. The timeline is confusing and jumps between the past, present, and future, forcing students to use mental energy to understand the sequence of events instead of the grammar." },
+    { text: "On Saturday, Maria will visit her friend, Juan. Juan’s sister, Sofia, will be there. My cousin, Leo, will meet them too. Leo's friend, Ana, will bring a game. They will all play together with Maria's brother, Pablo.", correct: "Too Many Characters", explanation: "This introduces extraneous load. Keeping track of all the different characters and their relationships overloads the working memory, making it difficult for students to focus on the repeated grammatical structure, 'will + verb'." },
+    { text: "Tomorrow, I will paint my bedroom. It’s a very small room with one window that looks out onto a busy street. I will paint it a nice, calm, light blue colour. My dog, a noisy but friendly beagle, will watch me.", correct: "Extraneous Information", explanation: "This is an example of extraneous load. The descriptive details about the room, window, street, colour, and dog are not necessary for understanding the future plan. This extra information clutters the working memory." },
+    { text: "In the future, we will use quantum teleportation. This system will deconstruct our molecular structure and transmit the data to a new location. A machine will then reconstruct our bodies instantly. It will be a new era for transportation.", correct: "Complex Topic", explanation: "This increases the intrinsic load. The topic of 'quantum teleportation' and its complex vocabulary is very difficult. Students will use all their working memory trying to understand the concepts, leaving no space to learn the grammar." },
+    { text: "Here is my plan. First, I will finish my work. Then, I will call my friend. After that, we will choose a restaurant. Finally, we will go out for dinner. It will be a simple, fun evening.", correct: "Clear Sequencing (Helpful Load)", explanation: "This promotes germane load. The clear sequencing words (First, Then, After that, Finally) create a simple, logical structure that helps students organize the information easily, supporting the process of learning." },
+    { text: "My schedule for next week is busy. On Monday, I will go to the gym. On Wednesday, I will see the dentist. On Friday, I will meet my friends. Next weekend, I will finally relax at home.", correct: "Clear Time Expressions (Helpful Load)", explanation: "This promotes germane load. The repeated use of clear, simple future time expressions provides a strong and clear context. This helps students build a solid mental model (schema) for when to use the future simple." },
+    { text: "To curb inflation, the central bank will increase the federal funds rate. This action will raise borrowing costs for commercial banks. Consequently, consumer loan rates will also rise, which will reduce aggregate demand.", correct: "Complex Topic", explanation: "This presentation increases the intrinsic load. The economic concepts (inflation, federal funds rate, aggregate demand) and specialized vocabulary are too complex for a typical language learner, exhausting their cognitive resources." },
+    { text: "For the new project, Tom will design the user interface. Susan, his manager, will oversee the process and report to David. Meanwhile, Chloe will write the code, and her partner, Mark, will test it. Ben will create the ads.", correct: "Too Many Characters", explanation: "This presentation creates extraneous load by introducing too many people (Tom, Susan, David, Chloe, Mark, Ben). Learners must expend mental energy tracking who is who, which detracts from focusing on the grammar point." },
+    { text: "My morning routine will be simple. First, I will wake up at 7 AM. Then, I will go for a run in the park. After that, I will have a healthy breakfast. Finally, I will be ready to start my day.", correct: "Clear Sequencing (Helpful Load)", explanation: "This text promotes germane load. The clear, logical sequence of actions, marked by signal words (First, Then, After that, Finally), helps learners to easily follow the plan and reinforces the use of the future simple." }
+];
+
+const allOptions = ["Jumps in Time", "Too Many Characters", "Extraneous Information", "Complex Topic", "Clear Sequencing (Helpful Load)", "Clear Time Expressions (Helpful Load)"];
+
+/**
+ * Shuffles an array in place using the Fisher-Yates (aka Knuth) Shuffle.
+ * @param {Array} array The array to shuffle.
+ */
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]; // ES6 destructuring swap
+    }
+}
+
+// Shuffle the questions before the app initializes
+shuffleArray(questionsData);
+
+const App = {
+    currentIndex: 0,
+    isQuestionAnswered: false,
+    dom: {},
+
+    init() {
+        this.cacheDom();
+        this.buildQuestions();
+        this.buildProgressTracker();
+        this.bindEvents();
+        this.updateView();
+    },
+
+    cacheDom() {
+        this.dom.appWrapper = document.getElementById('app-wrapper');
+        this.dom.questionsContainer = document.querySelector('.mc-questions-container');
+        this.dom.progressTracker = document.querySelector('.progress-tracker');
+        this.dom.submitBtn = document.getElementById('submit-btn');
+        this.dom.slideFeedback = document.getElementById('slide-feedback');
+        this.dom.feedbackSidebar = document.getElementById('feedback-sidebar');
+        this.dom.feedbackDetails = document.getElementById('feedback-details');
+        this.dom.feedbackScore = document.getElementById('feedback-score');
+        this.dom.feedbackCloseBtn = document.getElementById('feedback-close-btn');
+    },
+
+    buildQuestions() {
+        const fragment = document.createDocumentFragment();
+        questionsData.forEach((qData, index) => {
+            const questionEl = document.createElement('div');
+            questionEl.className = 'mc-question';
+            questionEl.dataset.index = index;
+            const optionsHtml = allOptions.map(opt => `<div class="mc-option-item"><label class="mc-option-label"><input type="radio" name="q${index}"><span class="option-control"></span><span class="mc-option-text">${opt}</span></label></div>`).join('');
+            questionEl.innerHTML = `<div class="mc-question-header"><div class="mc-question-text">${qData.text}</div></div><div class="mc-options-container">${optionsHtml}</div><div class="explanation-container"><p class="explanation-text"></p></div>`;
+            fragment.appendChild(questionEl);
+        });
+        this.dom.questionsContainer.appendChild(fragment);
+        this.dom.questions = this.dom.questionsContainer.querySelectorAll('.mc-question');
+    },
+
+    buildProgressTracker() {
+        this.dom.progressTracker.innerHTML = questionsData.map((_, i) => `<div class="progress-dot" data-index="${i}"></div>`).join('');
+        this.dom.progressDots = this.dom.progressTracker.querySelectorAll('.progress-dot');
+    },
+
+    bindEvents() {
+        this.dom.submitBtn.addEventListener('click', () => this.handleSubmit());
+        this.dom.feedbackCloseBtn.addEventListener('click', () => this.resetActivity());
+    },
+
+    handleSubmit() {
+        if (this.isQuestionAnswered) {
+            this.changeQuestion(1);
+            return;
+        }
+        this.dom.slideFeedback.textContent = '';
+        const currentQuestionEl = this.dom.questions[this.currentIndex];
+        const selectedInput = currentQuestionEl.querySelector('input:checked:not(:disabled)');
+
+        if (!selectedInput) {
+            this.showFeedbackMessage('Please select an answer.', 'incorrect');
+            return;
+        }
+
+        const userAnswer = selectedInput.closest('.mc-option-label').querySelector('.mc-option-text').textContent;
+        const correctAnswer = questionsData[this.currentIndex].correct;
+        const selectedLabel = selectedInput.closest('.mc-option-label');
+
+        if (userAnswer === correctAnswer) {
+            this.isQuestionAnswered = true;
+            this.showFeedbackMessage('Correct!', 'correct');
+            selectedLabel.classList.add('correct-answer');
+            this.disableAllOptions();
+            this.showExplanation();
+            this.dom.submitBtn.textContent = this.currentIndex === questionsData.length - 1 ? 'Show Results' : 'Next Question';
+            this.updateProgress();
+        } else {
+            this.showFeedbackMessage('Not quite, try again.', 'incorrect');
+            selectedLabel.classList.add('fade-out');
+            selectedInput.disabled = true;
+        }
+    },
+    
+    showExplanation() {
+        const currentQuestionEl = this.dom.questions[this.currentIndex];
+        const explanationContainer = currentQuestionEl.querySelector('.explanation-container');
+        const explanationTextEl = explanationContainer.querySelector('.explanation-text');
+        explanationTextEl.innerHTML = questionsData[this.currentIndex].explanation;
+        explanationContainer.classList.add('visible');
+    },
+
+    disableAllOptions() {
+        const currentQuestionEl = this.dom.questions[this.currentIndex];
+        currentQuestionEl.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.disabled = true;
+        });
+        currentQuestionEl.querySelectorAll('.mc-option-label').forEach(label => {
+             if (!label.classList.contains('correct-answer')) {
+                label.style.cursor = 'default';
+                label.classList.add('fade-out');
+             }
+        });
+    },
+    
+    showFeedbackMessage(message, type) {
+        this.dom.slideFeedback.textContent = message;
+        this.dom.slideFeedback.className = type;
+    },
+
+    clearCurrentFeedback() {
+        this.showFeedbackMessage('', '');
+        const currentQuestionEl = this.dom.questions[this.currentIndex];
+        currentQuestionEl.querySelectorAll('.mc-option-label').forEach(label => {
+            label.classList.remove('correct-answer', 'fade-out');
+            label.style.cursor = 'pointer';
+        });
+        currentQuestionEl.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.disabled = false;
+            input.checked = false;
+        });
+        const explanationContainer = currentQuestionEl.querySelector('.explanation-container');
+        if(explanationContainer) explanationContainer.classList.remove('visible');
+    },
+    
+    changeQuestion(direction) {
+        this.currentIndex += direction;
+        this.isQuestionAnswered = false;
+        if (this.currentIndex >= questionsData.length) {
+            this.showFinalSummary();
+        } else {
+            this.updateView();
+        }
+    },
+    
+    updateProgress() {
+         this.dom.progressDots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === this.currentIndex);
+            dot.classList.toggle('completed', i < this.currentIndex || (i === this.currentIndex && this.isQuestionAnswered));
+        });
+    },
+
+    updateView() {
+        this.dom.questions.forEach((q, i) => q.classList.toggle('active', i === this.currentIndex));
+        this.dom.submitBtn.textContent = 'Check Answer';
+        this.clearCurrentFeedback();
+        this.updateProgress();
+    },
+    
+    showFinalSummary() {
+        this.dom.feedbackDetails.innerHTML = `<div class="feedback-item"><h4>Excellent Work!</h4><p>You have successfully analyzed all the presentation examples and identified the key cognitive load issues in each one. This skill is crucial for creating clear and effective learning materials.</p></div>`;
+        this.dom.feedbackScore.textContent = `You completed ${questionsData.length} out of ${questionsData.length} tasks.`;
+        this.dom.appWrapper.classList.add('feedback-visible');
+        document.body.classList.add('feedback-open');
+    },
+
+    resetActivity() {
+        this.dom.appWrapper.classList.remove('feedback-visible');
+        document.body.classList.remove('feedback-open');
+        this.currentIndex = 0;
+        this.isQuestionAnswered = false;
+        shuffleArray(questionsData); // Re-shuffle on reset
+        this.dom.questionsContainer.innerHTML = ''; // Clear old questions
+        this.buildQuestions(); // Rebuild with new order
+        this.updateView();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+
+</body>
+</html>
